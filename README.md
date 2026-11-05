@@ -42,7 +42,10 @@ Framer: proyecto "Epsilon Work" (`dyIzFspnOMPrMok3Y005`), publicado en epsilonwo
 Tokens de color y tipografía ya portados a `src/app/globals.css`. Rutas creadas como stubs:
 `/`, `/servicios`, `/sobre-nosotros`, `/clientes`, `/contacto`, `/legal/*`.
 
-Componentes de código en Framer pendientes de portar (React):
-NumberCounter, DraggableCarousel, DottedSurface (Red_node), Preloader, AsciiText, OrbitLogos,
-VariableDotsGlobe (Network_Globe), GlowEdge, Carrusel3D, withBlindsReveal, GlowBorder, AsciiShimmer,
-EpsilonStackCards (Dots_cards).
+Componentes de código de Framer portados a React en `src/components/framer/` (sin dependencia de `framer`/`framer-motion`):
+NumberCounter, DraggableCarousel, DottedSurface, Preloader, AsciiText, OrbitLogos, VariableDotsGlobe,
+GlowEdge, Carrusel3D, BlindsReveal (`withBlindsReveal`), GlowBorder, AsciiShimmer, EpsilonStackCards.
+
+Home maquetado en `src/components/home/` (Hero, Servicios, Diferencial, Marcas). Nav, CTA y Footer del
+layout de Framer en `src/components/layout/`. `ImageAscii` sustituye al componente externo "Interactive ASCII".
+Assets (logos, imágenes, PDF, video del preloader) en `public/`.
