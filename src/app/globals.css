@@ -111,5 +111,5 @@ h1, h2, h3, h4 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-appear, [class*="animate-[ticker"] { animation: none !important; }
+  .animate-appear, [style*="ticker"] { animation: none !important; }
 }

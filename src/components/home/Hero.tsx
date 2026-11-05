@@ -1,16 +1,9 @@
-import Image from "next/image";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import BlindsReveal from "@/components/framer/BlindsReveal";
 import VariableDotsGlobe from "@/components/framer/VariableDotsGlobe";
+import LogoTicker from "@/components/home/LogoTicker";
 
-const logos = [
-  { src: "/logos/vtr.svg", alt: "VTR", width: 95 },
-  { src: "/logos/zte.svg", alt: "ZTE", width: 76 },
-  { src: "/logos/wom.svg", alt: "WOM", width: 86 },
-  { src: "/logos/tuves.svg", alt: "Tuves", width: 115 },
-  { src: "/logos/claro.svg", alt: "Claro", width: 108 },
-];
 
 export default function Hero() {
   return (
@@ -54,16 +47,7 @@ export default function Hero() {
           />
         </div>
 
-        {/* Ticker de logos (tickerEffect velocity 50) */}
-        <div className="w-full max-w-[1200px] overflow-hidden py-4 [mask-image:linear-gradient(90deg,transparent,#000_10%,#000_90%,transparent)]">
-          <ul className="flex w-max animate-[ticker_32s_linear_infinite] items-center gap-[65px] pr-[65px] hover:[animation-duration:64s]">
-            {[...logos, ...logos, ...logos, ...logos].map((l, i) => (
-              <li key={i} aria-hidden={i >= logos.length} className="shrink-0">
-                <Image src={l.src} alt={i < logos.length ? l.alt : ""} width={l.width} height={40} style={{ width: l.width, height: "auto" }} />
-              </li>
-            ))}
-          </ul>
-        </div>
+        <LogoTicker />
       </div>
     </section>
   );
