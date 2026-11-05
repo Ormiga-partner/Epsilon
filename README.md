@@ -31,7 +31,9 @@ Flujo: cambios en `dev` → revisar link de prueba → PR `dev` → `production`
 Cloudflare (Workers & Pages → Create → Import a repository, Workers Builds):
 - Production branch: `production`
 - Build command: `npx opennextjs-cloudflare build` · Deploy command: `npx opennextjs-cloudflare deploy`
-- Non-production branch builds: activado · Deploy command: `npx opennextjs-cloudflare upload`
+- Preview (rama `dev`, tracking branch): Build command `npx opennextjs-cloudflare build` · Preview command
+  `npx opennextjs-cloudflare upload` (no usar el `npx wrangler preview` por defecto: requiere bloque `previews`
+  en `wrangler.jsonc` y no está probado con OpenNext)
 - Variables: `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`
 
 Manual: `npm run deploy` (producción) · `npm run upload` (preview).
