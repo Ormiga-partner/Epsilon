@@ -19,10 +19,22 @@ npm install
 npm run dev
 ```
 
-## Deploy
+## Ramas y deploy
 
-- `npm run deploy:dev` → worker `epsilon-work-dev`
-- `npm run deploy` → worker `epsilon-work` (producción)
+| Rama | Uso | Cloudflare |
+| --- | --- | --- |
+| `dev` | Todo el trabajo se hace aquí | Preview URL (link de prueba) en cada push |
+| `production` | Web final, solo recibe merges desde `dev` | Deploy a producción → dominio del cliente |
+
+Flujo: cambios en `dev` → revisar link de prueba → PR `dev` → `production`.
+
+Cloudflare (Workers & Pages → Create → Import a repository, Workers Builds):
+- Production branch: `production`
+- Build command: `npm run build` · Deploy command: `npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy`
+- Non-production branch builds: activado · Deploy command: `npx opennextjs-cloudflare build && npx opennextjs-cloudflare upload`
+- Variables: `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`
+
+Manual: `npm run deploy` (producción) · `npm run upload` (preview).
 
 ## Origen del diseño
 
