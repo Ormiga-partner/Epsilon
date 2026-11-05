@@ -6,8 +6,13 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Epsilon Work",
-  description: "Epsilon Work",
+  metadataBase: new URL("https://epsilonwork.cl"),
+  title: {
+    default: "Epsilon Work | Ingeniería y construcción telecom en Chile",
+    template: "%s | Epsilon Work",
+  },
+  description:
+    "Despliegue, operación y mantenimiento de redes de fibra óptica, sitios móviles y obras civiles telecom. Modalidad llave en mano con SLA. Cobertura nacional.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

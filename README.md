@@ -23,3 +23,14 @@ npm run dev
 
 - `npm run deploy:dev` → worker `epsilon-work-dev`
 - `npm run deploy` → worker `epsilon-work` (producción)
+
+## Origen del diseño
+
+Framer: proyecto "Epsilon Work" (`dyIzFspnOMPrMok3Y005`), publicado en epsilonwork.cl.
+Tokens de color y tipografía ya portados a `src/app/globals.css`. Rutas creadas como stubs:
+`/`, `/servicios`, `/sobre-nosotros`, `/clientes`, `/contacto`, `/legal/*`.
+
+Componentes de código en Framer pendientes de portar (React):
+NumberCounter, DraggableCarousel, DottedSurface (Red_node), Preloader, AsciiText, OrbitLogos,
+VariableDotsGlobe (Network_Globe), GlowEdge, Carrusel3D, withBlindsReveal, GlowBorder, AsciiShimmer,
+EpsilonStackCards (Dots_cards).
