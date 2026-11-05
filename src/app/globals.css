@@ -59,3 +59,57 @@ body {
 h1, h2, h3, h4 {
   font-weight: 400;
 }
+
+/* Estilos de texto de Framer (desktop ≥1200 · tablet ≥810 · phone) */
+@utility t-h1 {
+  font-size: 2.95rem; line-height: 1.1em; letter-spacing: -0.025em;
+  @media (width >= 810px) { font-size: 3.58rem; line-height: 1.05em; letter-spacing: -0.03em; }
+  @media (width >= 1200px) { font-size: 4.21rem; line-height: 1em; }
+}
+@utility t-h2 {
+  font-size: 2.21rem; line-height: 1.25em; letter-spacing: -0.02em;
+  @media (width >= 810px) { font-size: 2.69rem; line-height: 1.2em; letter-spacing: -0.025em; }
+  @media (width >= 1200px) { font-size: 3.16rem; line-height: 1.2em; letter-spacing: -0.03em; }
+}
+@utility t-h3 {
+  font-size: 1.66rem; line-height: 1.25em; letter-spacing: -0.01em;
+  @media (width >= 810px) { font-size: 2.01rem; line-height: 1.2em; letter-spacing: -0.02em; }
+  @media (width >= 1200px) { font-size: 2.37rem; }
+}
+@utility t-h4 {
+  font-size: 1.25rem; line-height: 1.3em; letter-spacing: -0.01em;
+  @media (width >= 810px) { font-size: 1.51rem; line-height: 1.25em; }
+  @media (width >= 1200px) { font-size: 1.78rem; line-height: 1.2em; }
+}
+@utility t-body-l {
+  font-size: 1.13rem; line-height: 1.45em; letter-spacing: -0.005em; font-weight: 300;
+  @media (width >= 810px) { font-size: 1.25rem; line-height: 1.4em; letter-spacing: -0.01em; }
+  @media (width >= 1200px) { font-size: 1.33rem; }
+}
+@utility t-body-m {
+  font-size: 1rem; line-height: 1.5em; letter-spacing: -0.01em; font-weight: 300;
+  @media (width >= 1200px) { line-height: 1.4em; }
+}
+@utility t-body-s {
+  font-size: 0.8rem; line-height: 1.45em;
+  @media (width >= 810px) { line-height: 1.4em; }
+}
+
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* appearEffect "onMount" de Framer: opacity 0 / y 10 → visible */
+@keyframes appear-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@utility animate-appear {
+  display: inline-block;
+  animation: appear-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-appear, [class*="animate-[ticker"] { animation: none !important; }
+}
