@@ -51,11 +51,8 @@ export default function Button({
         showBase={false}
       />
     ) : (
-      // En Framer es una instancia de 1px de alto en el borde inferior (línea animada)
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-px"
-      >
+      // Pill: borde base + luz animada alrededor de todo el botón
+      <>
         <GlowBorder
           {...glowBase}
           color={
@@ -75,7 +72,7 @@ export default function Button({
               : "rgba(255,255,255,0.24)"
           }
         />
-      </span>
+      </>
     );
   if (download || href.startsWith("http") || href.startsWith("mailto:")) {
     return (
