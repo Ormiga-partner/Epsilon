@@ -33,10 +33,14 @@ export interface ImageAsciiProps {
   glowBlur?: number;
   /** cuánto se acercan al color claro los caracteres más livianos (0–1) */
   lightMax?: number;
+  /** "Static effect" de Framer: cada cuántos segundos se re-sortea el ruido */
+  staticInterval?: number;
+  /** amplitud del ruido sobre la densidad (0 = sin hormigueo) */
+  staticAmount?: number;
   className?: string;
 }
 
-type Grid = { chars: string[]; dens: number[]; cols: number; rows: number; colW: number; rowH: number; ox: number; oy: number };
+type Grid = { chars: string[]; base: number[]; dens: number[]; cols: number; rows: number; colW: number; rowH: number; ox: number; oy: number };
 
 export default function ImageAscii({
   src,
@@ -50,6 +54,8 @@ export default function ImageAscii({
   cursorWidth = 32,
   glowBlur = 2,
   lightMax = 0.55,
+  staticInterval = 0.1,
+  staticAmount = 0.06,
   className,
 }: ImageAsciiProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -105,6 +111,7 @@ export default function ImageAscii({
       const c = (contrast + 100) / 100;
       const chars: string[] = new Array(cols * rows);
       const dens: number[] = new Array(cols * rows).fill(0);
+      const base: number[] = new Array(cols * rows).fill(0);
       for (let i = 0; i < cols * rows; i++) {
         const p = i * 4;
         if (data[p + 3] < 20) {
@@ -117,6 +124,7 @@ export default function ImageAscii({
         if (invert) l = 1 - l;
         chars[i] = DETAILED[Math.floor(l * (DETAILED.length - 1))];
         dens[i] = l;
+        base[i] = l;
       }
       // Normaliza la densidad al rango real de la imagen (el color se reparte entre trazos densos y livianos)
       let dMin = 1;
@@ -128,7 +136,7 @@ export default function ImageAscii({
       }
       const span = Math.max(dMax - dMin, 0.001);
       for (let i = 0; i < dens.length; i++) dens[i] = (dens[i] - dMin) / span;
-      grid = { chars, dens, cols, rows, colW, rowH, ox: (W - dw) / 2, oy: (H - (rows * rowH)) / 2 };
+      grid = { chars, base, dens, cols, rows, colW, rowH, ox: (W - dw) / 2, oy: (H - (rows * rowH)) / 2 };
       draw();
     };
 
@@ -171,6 +179,34 @@ export default function ImageAscii({
       ctx.globalAlpha = 1;
     };
 
+    // "Static effect": cada `staticInterval` s se vuelve a sortear un ruido por celda sobre la
+    // densidad base, así los caracteres saltan a vecinos del ramp y la imagen "hormiguea".
+    const reroll = () => {
+      if (!grid) return;
+      const { chars, base } = grid;
+      const last = DETAILED.length - 1;
+      for (let i = 0; i < chars.length; i++) {
+        if (chars[i] === " ") continue;
+        const l = Math.min(1, Math.max(0.02, base[i] + (Math.random() * 2 - 1) * staticAmount));
+        chars[i] = DETAILED[Math.max(1, Math.round(l * last))];
+      }
+      schedule();
+    };
+    let timer = 0;
+    const startStatic = () => {
+      if (reduced || staticAmount <= 0 || timer) return;
+      timer = window.setInterval(reroll, staticInterval * 1000);
+    };
+    const stopStatic = () => {
+      window.clearInterval(timer);
+      timer = 0;
+    };
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) startStatic();
+      else stopStatic();
+    });
+    io.observe(canvas);
+
     const schedule = () => {
       if (!raf) raf = requestAnimationFrame(draw);
     };
@@ -195,11 +231,13 @@ export default function ImageAscii({
     return () => {
       cancelled = true;
       ro.disconnect();
+      io.disconnect();
+      stopStatic();
       if (raf) cancelAnimationFrame(raf);
       hoverTarget.removeEventListener("pointermove", onMove);
       hoverTarget.removeEventListener("pointerleave", onLeave);
     };
-  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax]);
+  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax, staticInterval, staticAmount]);
 
   return <canvas ref={canvasRef} role="img" aria-label={alt} className={className} />;
 }
