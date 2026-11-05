@@ -227,7 +227,8 @@ export default function VariableDotsGlobe(incomingProps: VariableDotsGlobeProps)
             alpha: true,
         })
         renderer.setSize(width, height)
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+        // Rendimiento: tope de 1.5x de densidad de píxeles (los puntos no ganan nitidez visible a 2x)
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
         const container = mountRef.current
         container.appendChild(renderer.domElement)
 
@@ -287,8 +288,8 @@ export default function VariableDotsGlobe(incomingProps: VariableDotsGlobeProps)
         let disposed = false
         const img = new Image()
         img.crossOrigin = "anonymous"
-        img.src =
-            "https://unpkg.com/three-globe@2.31.1/example/img/earth-water.png"
+        // Máscara tierra/agua servida desde el sitio (antes unpkg.com/three-globe/example/img)
+        img.src = "/textures/earth-water.png"
         img.onload = () => {
             if (disposed) return
             try {
@@ -518,8 +519,17 @@ export default function VariableDotsGlobe(incomingProps: VariableDotsGlobeProps)
         // 5. Animation Loop & Visibility Observer
         let animationFrameId: number | null = null
 
-        const animate = () => {
+        // Rendimiento: en reposo se dibuja a ~30 fps (la rotación es lenta); durante hover o arrastre
+        // vuelve a 60 fps. Rotación y amortiguación dependen del tiempo, no de los frames.
+        let lastFrame = 0
+        const animate = (now: number = performance.now()) => {
             animationFrameId = requestAnimationFrame(animate)
+            const interacting =
+                isDragging || targetHoverActive > 0 || currentHoverActive > 0.01
+            if (lastFrame && !interacting && now - lastFrame < 31) return
+            const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 0.1) : 0.016
+            const frames = dt * 60
+            lastFrame = now
 
             // Viewport & Editor Render Control
             // (En Framer se cortaba aquí en el editor si editorPreview = false.)
@@ -530,18 +540,19 @@ export default function VariableDotsGlobe(incomingProps: VariableDotsGlobeProps)
             // Apply momentum, auto-rotation, and smooth damping
             if (!isFlat) {
                 if (!isDragging) {
-                    targetRotationY += rotationSpeed * 0.016
-                    targetRotationY += dragVelocity.x
-                    targetRotationX += dragVelocity.y
-                    dragVelocity.x *= 0.95
-                    dragVelocity.y *= 0.95
+                    targetRotationY += rotationSpeed * dt
+                    targetRotationY += dragVelocity.x * frames
+                    targetRotationX += dragVelocity.y * frames
+                    dragVelocity.x *= Math.pow(0.95, frames)
+                    dragVelocity.y *= Math.pow(0.95, frames)
                 }
 
-                // Damping interpolation
+                // Damping interpolation (equivalente a 0.1 por frame a 60 fps)
+                const damp = 1 - Math.pow(0.9, frames)
                 mainGroup.rotation.y +=
-                    (targetRotationY - mainGroup.rotation.y) * 0.1
+                    (targetRotationY - mainGroup.rotation.y) * damp
                 mainGroup.rotation.x +=
-                    (targetRotationX - mainGroup.rotation.x) * 0.1
+                    (targetRotationX - mainGroup.rotation.x) * damp
             }
 
             renderer.render(scene, camera)
@@ -563,7 +574,8 @@ export default function VariableDotsGlobe(incomingProps: VariableDotsGlobeProps)
 
             // Smooth Hover Transition
             currentHoverActive +=
-                (targetHoverActive - currentHoverActive) * 0.15
+                (targetHoverActive - currentHoverActive) *
+                (1 - Math.pow(0.85, frames))
             if (dotsMesh) {
                 dotsMesh.material.uniforms.uHoverActive.value =
                     currentHoverActive

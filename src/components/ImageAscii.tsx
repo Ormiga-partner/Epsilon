@@ -18,6 +18,8 @@ function mix(a: [number, number, number], b: [number, number, number], t: number
   return `rgb(${Math.round(a[0] + (b[0] - a[0]) * t)}, ${Math.round(a[1] + (b[1] - a[1]) * t)}, ${Math.round(a[2] + (b[2] - a[2]) * t)})`;
 }
 
+const BUCKETS = 12;
+
 export interface ImageAsciiProps {
   src: string;
   alt: string;
@@ -72,6 +74,8 @@ export default function ImageAscii({
     const to = parseRgb(colorTo);
     const monoFamily = `${geistMono ? `${geistMono}, ` : ""}ui-monospace, monospace`;
 
+    const palette = Array.from({ length: BUCKETS }, (_, k) => mix(from, to, ((k + 0.5) / BUCKETS) * lightMax));
+    let bucketOf = new Uint8Array(0);
     let cancelled = false;
     let grid: Grid | null = null;
     let pointer: { x: number; y: number } | null = null;
@@ -136,6 +140,8 @@ export default function ImageAscii({
       }
       const span = Math.max(dMax - dMin, 0.001);
       for (let i = 0; i < dens.length; i++) dens[i] = (dens[i] - dMin) / span;
+      bucketOf = new Uint8Array(dens.length);
+      for (let i = 0; i < dens.length; i++) bucketOf[i] = Math.min(BUCKETS - 1, Math.floor((1 - dens[i]) * BUCKETS));
       grid = { chars, base, dens, cols, rows, colW, rowH, ox: (W - dw) / 2, oy: (H - (rows * rowH)) / 2 };
       draw();
     };
@@ -146,34 +152,35 @@ export default function ImageAscii({
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
       const dpr = canvas.width / parseFloat(canvas.style.width || "1");
-      const { chars, dens, cols, rows, colW, rowH, ox, oy } = grid;
+      const { chars, cols, rows, colW, rowH, ox, oy } = grid;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.shadowBlur = glowBlur;
       // ctx.font no admite var(): se resuelve la familia de Geist Mono desde CSS
       ctx.font = `${rowH}px ${monoFamily}`;
       ctx.textBaseline = "top";
 
-      // Color "gradient" de Framer: caracteres densos → colorFrom, livianos → colorTo
+      // Color "gradient" de Framer: caracteres densos → colorFrom, livianos → colorTo.
+      // Rendimiento: los colores se agrupan en BUCKETS tonos y se dibujan por grupo (un solo
+      // cambio de fillStyle por tono); el glow va en un drop-shadow CSS del canvas.
       const radius = (cursorWidth / 2) * colW;
-      for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-          const i = y * cols + x;
-          const ch = chars[i];
-          if (ch === " ") continue;
-          const px = ox + x * colW;
-          const py = oy + y * rowH;
-          let alpha = 1;
-          if (pointer) {
-            const d = Math.hypot(px + colW / 2 - pointer.x, py + rowH / 2 - pointer.y);
-            if (d < radius) alpha = d / radius; // degradado: transparente en el centro del cursor
+      for (let bkt = 0; bkt < BUCKETS; bkt++) {
+        ctx.fillStyle = palette[bkt];
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            const i = y * cols + x;
+            const ch = chars[i];
+            if (ch === " " || bucketOf[i] !== bkt) continue;
+            const px = ox + x * colW;
+            const py = oy + y * rowH;
+            let alpha = 1;
+            if (pointer) {
+              const d = Math.hypot(px + colW / 2 - pointer.x, py + rowH / 2 - pointer.y);
+              if (d < radius) alpha = d / radius; // degradado: transparente en el centro del cursor
+            }
+            if (alpha <= 0.02) continue;
+            if (alpha !== ctx.globalAlpha) ctx.globalAlpha = alpha;
+            ctx.fillText(ch, px, py);
           }
-          if (alpha <= 0.02) continue;
-          const color = mix(from, to, (1 - dens[i]) * lightMax);
-          ctx.globalAlpha = alpha;
-          ctx.fillStyle = color;
-          ctx.shadowColor = color;
-          ctx.fillText(ch, px, py);
         }
       }
       ctx.globalAlpha = 1;
@@ -239,5 +246,15 @@ export default function ImageAscii({
     };
   }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax, staticInterval, staticAmount]);
 
-  return <canvas ref={canvasRef} role="img" aria-label={alt} className={className} />;
+  const [gr, gg, gb] = parseRgb(colorFrom);
+  const glowColor = `rgba(${gr}, ${gg}, ${gb}, 0.5)`;
+  return (
+    <canvas
+      ref={canvasRef}
+      role="img"
+      aria-label={alt}
+      className={className}
+      style={glowBlur > 0 ? { filter: `drop-shadow(0 0 ${glowBlur}px ${glowColor})` } : undefined}
+    />
+  );
 }

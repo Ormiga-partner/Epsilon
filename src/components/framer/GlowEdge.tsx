@@ -69,6 +69,9 @@ export interface GlowEdgeProps {
     haloDifuminado?: number
     haloOpacidad?: number
     modo?: "hover" | "auto" | "ambos"
+    /** Rendimiento: en modo "auto", solo anima mientras el cursor está sobre la tarjeta
+     *  (útil cuando el borde queda tapado fuera del hover). La posición depende del reloj. */
+    soloConHover?: boolean
     /** Vueltas por segundo */
     velocidad?: number
     /** Segundos de seguimiento */
@@ -103,6 +106,7 @@ export default function GlowEdge(props: GlowEdgeProps) {
         haloDifuminado = 40,
         haloOpacidad = 0.45,
         modo = "hover",
+        soloConHover = false,
         velocidad = 0.25,
         duracion = 0.25,
         curva = "cubic-bezier(0.22, 1, 0.36, 1)",
@@ -218,7 +222,8 @@ export default function GlowEdge(props: GlowEdgeProps) {
         const paso = () => {
             const t = targetRef.current
             if (!t) return
-            const { width, height } = t.getBoundingClientRect()
+            // Rendimiento: usa la caja ya medida (ResizeObserver) en vez de getBoundingClientRect por frame
+            const { w: width, h: height } = cajaRef.current
             const tt = (performance.now() / 1000) * velocidad
             const p = puntoPerimetro(tt, width, height)
             mover(p.x, p.y, false)
@@ -323,7 +328,32 @@ export default function GlowEdge(props: GlowEdgeProps) {
             iniciarAuto()
         }
 
+        // Rendimiento: el recorrido automático se pausa mientras la tarjeta está fuera de pantalla
+        // (la posición depende del reloj, así que al volver sigue donde corresponde).
+        const io =
+            modo === "hover" || soloConHover
+                ? null
+                : new IntersectionObserver(([entry]) => {
+                      if (entry.isIntersecting) {
+                          if (!hoverRef.current) iniciarAuto()
+                      } else {
+                          detenerAuto()
+                      }
+                  })
+        io?.observe(target)
+
+        const autoEnter = () => iniciarAuto()
+        const autoLeave = () => detenerAuto()
+        if (modo === "auto" && soloConHover) {
+            detenerAuto()
+            target.addEventListener("pointerenter", autoEnter)
+            target.addEventListener("pointerleave", autoLeave)
+        }
+
         return () => {
+            io?.disconnect()
+            target.removeEventListener("pointerenter", autoEnter)
+            target.removeEventListener("pointerleave", autoLeave)
             target.removeEventListener("pointerenter", onEnter)
             target.removeEventListener("pointermove", onMove)
             target.removeEventListener("pointerleave", onLeave)
@@ -333,6 +363,7 @@ export default function GlowEdge(props: GlowEdgeProps) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         modo,
+        soloConHover,
         velocidad,
         tamano,
         haloTamano,

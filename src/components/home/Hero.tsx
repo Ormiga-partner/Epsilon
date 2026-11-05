@@ -1,7 +1,7 @@
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import BlindsReveal from "@/components/framer/BlindsReveal";
-import VariableDotsGlobe from "@/components/framer/VariableDotsGlobe";
+import LazyGlobe from "@/components/LazyGlobe";
 import LogoTicker from "@/components/home/LogoTicker";
 
 
@@ -37,7 +37,7 @@ export default function Hero() {
 
         {/* Globo: máscara inferior como en Framer */}
         <div className="h-[260px] w-full max-w-[1200px] [mask-image:linear-gradient(0deg,transparent_7%,#000_30%)] md:h-[380px]">
-          <VariableDotsGlobe
+          <LazyGlobe
             style={{ width: "100%", height: "100%" }}
             markers={[]}
             styling={{ oceanColor: "rgb(208, 219, 254)", dotColor: "rgb(67, 113, 252)", backgroundColor: "rgba(242, 242, 242, 0)" }}

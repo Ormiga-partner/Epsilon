@@ -54,6 +54,7 @@ function ServicioCard({ title, text, image }: (typeof servicios)[number]) {
         haloDifuminado={10}
         haloOpacidad={1}
         modo="auto"
+        soloConHover
         velocidad={0.3}
         duracion={0.25}
       />

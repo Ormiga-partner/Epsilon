@@ -278,8 +278,22 @@ export default function OrbitLogos(props: OrbitLogosProps) {
 
         let raf = 0
         let last = performance.now()
+        // Rendimiento: la rotación (que re-renderiza cada frame) se pausa fuera de pantalla
+        let visible = true
+        const io = new IntersectionObserver(([entry]) => {
+            visible = entry.isIntersecting
+            if (visible && !raf) {
+                last = performance.now()
+                raf = requestAnimationFrame(tick)
+            }
+        })
+        if (containerRef.current) io.observe(containerRef.current)
 
         const tick = (now: number) => {
+            if (!visible) {
+                raf = 0
+                return
+            }
             const dt = Math.min((now - last) / 1000, 0.05)
             last = now
             if (!draggingRef.current) {
@@ -293,7 +307,10 @@ export default function OrbitLogos(props: OrbitLogosProps) {
             raf = requestAnimationFrame(tick)
         }
         raf = requestAnimationFrame(tick)
-        return () => cancelAnimationFrame(raf)
+        return () => {
+            io.disconnect()
+            cancelAnimationFrame(raf)
+        }
     }, [isCanvas, speed, active])
 
     /* ---------- drag ---------- */

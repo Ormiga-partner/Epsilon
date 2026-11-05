@@ -1,6 +1,6 @@
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
-import VariableDotsGlobe from "@/components/framer/VariableDotsGlobe";
+import LazyGlobe from "@/components/LazyGlobe";
 
 // Componente "CTA" del layout de Framer
 export default function CTA() {
@@ -18,7 +18,7 @@ export default function CTA() {
           </Button>
         </div>
         <div className="pointer-events-auto absolute right-[-200px] bottom-0 hidden h-[380px] w-[70%] md:block">
-          <VariableDotsGlobe
+          <LazyGlobe
             style={{ width: "100%", height: "100%" }}
             markers={[]}
             styling={{ oceanColor: "rgb(209, 220, 255)", dotColor: "rgb(67, 113, 252)", backgroundColor: "rgba(242, 242, 242, 0)" }}
