@@ -1,11 +1,22 @@
 "use client";
 
-// Reemplazo ligero del componente externo "Interactive ASCII" (marketplace de Framer)
-// usado en las tarjetas de servicios: convierte la imagen a caracteres con degradado.
+// Reemplazo del componente externo "Interactive ASCII" (marketplace de Framer) usado en las
+// tarjetas de servicios. Valores de la instancia en Framer: sizing "fit", outputWidth 100,
+// characterSet "detailed", invertColors, brightness 30, contrast 20, color en degradado
+// (brand-700 → brand-100), glow blur 2, cursor "gradient" de 32 caracteres de ancho.
 
 import { useEffect, useRef } from "react";
 
 const DETAILED = " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
+
+function parseRgb(c: string): [number, number, number] {
+  const m = c.match(/\d+(\.\d+)?/g);
+  return m ? [Number(m[0]), Number(m[1]), Number(m[2])] : [0, 0, 0];
+}
+
+function mix(a: [number, number, number], b: [number, number, number], t: number) {
+  return `rgb(${Math.round(a[0] + (b[0] - a[0]) * t)}, ${Math.round(a[1] + (b[1] - a[1]) * t)}, ${Math.round(a[2] + (b[2] - a[2]) * t)})`;
+}
 
 export interface ImageAsciiProps {
   src: string;
@@ -17,8 +28,15 @@ export interface ImageAsciiProps {
   brightness?: number;
   contrast?: number;
   invert?: boolean;
+  /** ancho (en caracteres) del borrado con degradado alrededor del cursor */
+  cursorWidth?: number;
+  glowBlur?: number;
+  /** cuánto se acercan al color claro los caracteres más livianos (0–1) */
+  lightMax?: number;
   className?: string;
 }
+
+type Grid = { chars: string[]; dens: number[]; cols: number; rows: number; colW: number; rowH: number; ox: number; oy: number };
 
 export default function ImageAscii({
   src,
@@ -29,20 +47,33 @@ export default function ImageAscii({
   brightness = 30,
   contrast = 20,
   invert = true,
+  cursorWidth = 32,
+  glowBlur = 2,
+  lightMax = 0.55,
   className,
 }: ImageAsciiProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const parent = canvas.parentElement;
-    if (!parent) return;
+    const parent = canvas?.parentElement;
+    if (!canvas || !parent) return;
+    // El cursor se sigue sobre toda la tarjeta (como en Framer, donde el área es la tarjeta)
+    const hoverTarget = (canvas.closest("article") as HTMLElement | null) ?? parent;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const geistMono = getComputedStyle(document.documentElement).getPropertyValue("--font-geist-mono").trim();
+    const from = parseRgb(colorFrom);
+    const to = parseRgb(colorTo);
+    const monoFamily = `${geistMono ? `${geistMono}, ` : ""}ui-monospace, monospace`;
+
     let cancelled = false;
+    let grid: Grid | null = null;
+    let pointer: { x: number; y: number } | null = null;
+    let raf = 0;
     const img = new Image();
     img.src = src;
 
-    const draw = () => {
+    const compute = () => {
       if (cancelled || !img.complete || !img.naturalWidth) return;
       const W = parent.clientWidth;
       const H = parent.clientHeight;
@@ -52,21 +83,15 @@ export default function ImageAscii({
       canvas.height = H * dpr;
       canvas.style.width = `${W}px`;
       canvas.style.height = `${H}px`;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, W, H);
 
-      // "fit": la imagen cabe completa en el contenedor
       const scale = Math.min(W / img.naturalWidth, H / img.naturalHeight);
       const dw = img.naturalWidth * scale;
       const dh = img.naturalHeight * scale;
-      const ox = (W - dw) / 2;
-      const oy = (H - dh) / 2;
-
+      // Celdas como texto monoespaciado: ancho ≈ 0.62em (+0.02em de tracking), alto = 1em (lineHeight 1)
       const cols = outputWidth;
-      const cell = dw / cols;
-      const rows = Math.max(1, Math.round(dh / cell));
+      const colW = dw / cols;
+      const rowH = colW / 0.64;
+      const rows = Math.max(1, Math.round(dh / rowH));
 
       const sample = document.createElement("canvas");
       sample.width = cols;
@@ -76,37 +101,104 @@ export default function ImageAscii({
       sctx.drawImage(img, 0, 0, cols, rows);
       const data = sctx.getImageData(0, 0, cols, rows).data;
 
-      const grad = ctx.createLinearGradient(0, oy, 0, oy + dh);
-      grad.addColorStop(0, colorFrom);
-      grad.addColorStop(1, colorTo);
-      ctx.fillStyle = grad;
-      ctx.font = `${cell * 1.15}px var(--font-geist-mono), ui-monospace, monospace`;
-      ctx.textBaseline = "top";
-
       const c = (contrast + 100) / 100;
-      for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-          const i = (y * cols + x) * 4;
-          if (data[i + 3] < 20) continue;
-          let l = (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255;
-          l = (l - 0.5) * c + 0.5 + brightness / 100;
-          l = Math.min(1, Math.max(0, l));
-          if (invert) l = 1 - l;
-          const ch = DETAILED[Math.floor(l * (DETAILED.length - 1))];
-          if (ch !== " ") ctx.fillText(ch, ox + x * cell, oy + y * cell);
+      const chars: string[] = new Array(cols * rows);
+      const dens: number[] = new Array(cols * rows).fill(0);
+      for (let i = 0; i < cols * rows; i++) {
+        const p = i * 4;
+        if (data[p + 3] < 20) {
+          chars[i] = " ";
+          continue;
         }
+        let l = (0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2]) / 255;
+        l = (l - 0.5) * c + 0.5 + brightness / 100;
+        l = Math.min(1, Math.max(0, l));
+        if (invert) l = 1 - l;
+        chars[i] = DETAILED[Math.floor(l * (DETAILED.length - 1))];
+        dens[i] = l;
       }
+      // Normaliza la densidad al rango real de la imagen (el color se reparte entre trazos densos y livianos)
+      let dMin = 1;
+      let dMax = 0;
+      for (let i = 0; i < dens.length; i++) {
+        if (chars[i] === " ") continue;
+        dMin = Math.min(dMin, dens[i]);
+        dMax = Math.max(dMax, dens[i]);
+      }
+      const span = Math.max(dMax - dMin, 0.001);
+      for (let i = 0; i < dens.length; i++) dens[i] = (dens[i] - dMin) / span;
+      grid = { chars, dens, cols, rows, colW, rowH, ox: (W - dw) / 2, oy: (H - (rows * rowH)) / 2 };
+      draw();
     };
 
-    img.onload = draw;
-    if (img.complete) draw();
-    const ro = new ResizeObserver(draw);
+    const draw = () => {
+      raf = 0;
+      if (!grid) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const dpr = canvas.width / parseFloat(canvas.style.width || "1");
+      const { chars, dens, cols, rows, colW, rowH, ox, oy } = grid;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.shadowBlur = glowBlur;
+      // ctx.font no admite var(): se resuelve la familia de Geist Mono desde CSS
+      ctx.font = `${rowH}px ${monoFamily}`;
+      ctx.textBaseline = "top";
+
+      // Color "gradient" de Framer: caracteres densos → colorFrom, livianos → colorTo
+      const radius = (cursorWidth / 2) * colW;
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const i = y * cols + x;
+          const ch = chars[i];
+          if (ch === " ") continue;
+          const px = ox + x * colW;
+          const py = oy + y * rowH;
+          let alpha = 1;
+          if (pointer) {
+            const d = Math.hypot(px + colW / 2 - pointer.x, py + rowH / 2 - pointer.y);
+            if (d < radius) alpha = d / radius; // degradado: transparente en el centro del cursor
+          }
+          if (alpha <= 0.02) continue;
+          const color = mix(from, to, (1 - dens[i]) * lightMax);
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = color;
+          ctx.shadowColor = color;
+          ctx.fillText(ch, px, py);
+        }
+      }
+      ctx.globalAlpha = 1;
+    };
+
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(draw);
+    };
+    const onMove = (e: PointerEvent) => {
+      const r = canvas.getBoundingClientRect();
+      pointer = { x: e.clientX - r.left, y: e.clientY - r.top };
+      schedule();
+    };
+    const onLeave = () => {
+      pointer = null;
+      schedule();
+    };
+
+    img.onload = compute;
+    if (img.complete) compute();
+    const ro = new ResizeObserver(compute);
     ro.observe(parent);
+    if (!reduced) {
+      hoverTarget.addEventListener("pointermove", onMove);
+      hoverTarget.addEventListener("pointerleave", onLeave);
+    }
     return () => {
       cancelled = true;
       ro.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+      hoverTarget.removeEventListener("pointermove", onMove);
+      hoverTarget.removeEventListener("pointerleave", onLeave);
     };
-  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert]);
+  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax]);
 
   return <canvas ref={canvasRef} role="img" aria-label={alt} className={className} />;
 }

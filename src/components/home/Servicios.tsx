@@ -27,12 +27,18 @@ const servicios = [
   },
 ];
 
-// Componente "Servicios" de Framer (tarjeta 390×480 desktop / 300 mobile)
+// Componente "Servicios" de Framer (tarjeta 390×480 desktop / 300 mobile).
+// Capas como en Framer: fondo degradado → GlowEdge → capa gris rgb(237,237,237) → contenido.
+// En hover (variante gesture "hover") la capa gris pasa de opacidad 1 a 0 con un spring
+// (stiffness 300, damping 40) y deja ver el degradado y el borde iluminado.
 function ServicioCard({ title, text, image }: (typeof servicios)[number]) {
   return (
-    <article className="relative flex h-[440px] w-[300px] flex-col gap-8 overflow-hidden rounded-3xl bg-[rgb(237,237,237)] p-6 md:h-[480px] md:w-[390px]">
+    <article className="group relative flex h-[440px] w-[300px] cursor-grab flex-col gap-8 overflow-hidden rounded-3xl bg-linear-to-b from-[rgb(242,245,255)] to-brand-100 p-6 active:cursor-grabbing md:h-[480px] md:w-[390px]">
+      {/* niveles=1: en Framer eran 3 por los wrappers del canvas; aquí el padre directo es la tarjeta.
+          zIndex 0 = wrapper de Framer, deja el borde bajo la capa gris hasta el hover. */}
       <GlowEdge
-        niveles={3}
+        style={{ zIndex: 0 }}
+        niveles={1}
         heredarRadio
         radio={24}
         grosor={1.5}
@@ -51,12 +57,16 @@ function ServicioCard({ title, text, image }: (typeof servicios)[number]) {
         velocidad={0.3}
         duracion={0.25}
       />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[rgb(237,237,237)] opacity-100 transition-opacity duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:opacity-0"
+      />
       <div className="relative min-h-0 flex-1">
-        <ImageAscii src={image} alt={title} className="absolute inset-0" />
+        <ImageAscii src={image} alt={title} brightness={0} className="absolute inset-0" />
       </div>
-      <div className="relative flex flex-col gap-4">
-        <h3 className="t-h3 text-neutral-900">{title}</h3>
-        <p className="t-body-m text-neutral-800">{text}</p>
+      <div className="relative z-[2] flex flex-col gap-4">
+        <h3 className="t-h3 text-balance text-neutral-900">{title}</h3>
+        <p className="t-body-m text-balance text-neutral-800">{text}</p>
       </div>
     </article>
   );
