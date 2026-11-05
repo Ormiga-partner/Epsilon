@@ -28,7 +28,7 @@ const columns = [
   },
 ];
 
-const linkClass = "t-body-m text-neutral-700 transition-colors hover:text-brand-500";
+const linkClass = "t-body-s text-neutral-700 transition-colors hover:text-brand-500";
 
 export default function Footer() {
   return (

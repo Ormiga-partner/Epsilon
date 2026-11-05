@@ -1,5 +1,6 @@
 import SmoothScroll from "@/components/SmoothScroll";
 import Nav from "@/components/layout/Nav";
+import ProgressiveBlur from "@/components/layout/ProgressiveBlur";
 import CTA from "@/components/layout/CTA";
 import Footer from "@/components/layout/Footer";
 import Preloader from "@/components/framer/Preloader";
@@ -7,6 +8,7 @@ import Preloader from "@/components/framer/Preloader";
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <SmoothScroll>
+      <ProgressiveBlur />
       <Nav />
       <div className="flex w-full flex-col items-center gap-20 overflow-x-clip bg-neutral-100">
         {children}
