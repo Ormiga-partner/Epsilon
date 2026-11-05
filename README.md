@@ -32,8 +32,8 @@ Cloudflare (Workers & Pages → Create → Import a repository, Workers Builds):
 - Production branch: `production`
 - Build command: `npx opennextjs-cloudflare build` · Deploy command: `npx opennextjs-cloudflare deploy`
 - Preview (rama `dev`, tracking branch): Build command `npx opennextjs-cloudflare build` · Preview command
-  `npx opennextjs-cloudflare upload` (no usar el `npx wrangler preview` por defecto: requiere bloque `previews`
-  en `wrangler.jsonc` y no está probado con OpenNext)
+  `npx wrangler preview` (sube el worker ya generado en `.open-next/`; requiere el bloque `previews` de
+  `wrangler.jsonc`). No usar `opennextjs-cloudflare upload`: Previews lo rechaza con un error de nombre de Worker.
 - Variables: `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET`
 
 Manual: `npm run deploy` (producción) · `npm run upload` (preview).
