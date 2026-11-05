@@ -62,7 +62,7 @@ function ServicioCard({ title, text, image }: (typeof servicios)[number]) {
         className="pointer-events-none absolute inset-0 bg-[rgb(237,237,237)] opacity-100 transition-opacity duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:opacity-0"
       />
       <div className="relative min-h-0 flex-1">
-        <ImageAscii src={image} alt={title} brightness={0} className="absolute inset-0" />
+        <ImageAscii src={image} alt={title} brightness={-15} className="absolute inset-0" />
       </div>
       <div className="relative z-[2] flex flex-col gap-4">
         <h3 className="t-h3 text-balance text-neutral-900">{title}</h3>

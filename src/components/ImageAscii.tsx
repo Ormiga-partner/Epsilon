@@ -84,10 +84,11 @@ export default function ImageAscii({
       canvas.style.width = `${W}px`;
       canvas.style.height = `${H}px`;
 
+      // "fit" con la proporción de la imagen intacta (medido en la web de Framer).
+      // Celdas de texto monoespaciado: ancho ≈ 0.64em (glifo + tracking 0.02em), alto = 1em.
       const scale = Math.min(W / img.naturalWidth, H / img.naturalHeight);
       const dw = img.naturalWidth * scale;
       const dh = img.naturalHeight * scale;
-      // Celdas como texto monoespaciado: ancho ≈ 0.62em (+0.02em de tracking), alto = 1em (lineHeight 1)
       const cols = outputWidth;
       const colW = dw / cols;
       const rowH = colW / 0.64;
