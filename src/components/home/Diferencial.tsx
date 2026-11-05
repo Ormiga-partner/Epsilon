@@ -97,6 +97,31 @@ const full = (st: State): Required<State> => ({
   scale: st.scale ?? 1,
 });
 
+// Resplandor interior de Framer (box-shadow inset 0 0 42px 35px brand-300) reproducido con
+// degradados en los 4 bordes. Mismo perfil medido, pero sin el desenfoque que el navegador
+// tenía que recalcular en cada frame al escalar los cuadros (la sección bajaba a ~5 fps).
+const GLOW_STOPS: [number, number][] = [
+  [0, 0.95],
+  [6, 0.91],
+  [12, 0.86],
+  [18, 0.79],
+  [24, 0.69],
+  [30, 0.57],
+  [36, 0.46],
+  [42, 0.34],
+  [48, 0.245],
+  [54, 0.16],
+  [60, 0.096],
+  [66, 0.043],
+  [72, 0.02],
+  [78, 0],
+];
+const glowEdge = (dir: string) =>
+  `linear-gradient(${dir}, ${GLOW_STOPS.map(([d, a]) => `rgba(114, 148, 253, ${a}) ${d}px`).join(", ")})`;
+const INNER_GLOW = ["to right", "to left", "to bottom", "to top"]
+  .map(glowEdge)
+  .join(", ");
+
 export default function Diferencial() {
   const rootRef = useRef<HTMLDivElement>(null);
   // Qué cifras están visibles: el contador se monta al aparecer (resetOnReEntry de Framer)
@@ -237,8 +262,12 @@ export default function Diferencial() {
               key={i}
               data-kind="card"
               data-track={JSON.stringify(track)}
-              className="absolute inset-0 overflow-hidden rounded-3xl bg-brand-500 shadow-[inset_0_0_42px_35px_var(--color-brand-300)]"
-              style={{ zIndex: 8 - i, transform: "scale(0)" }}
+              className="absolute inset-0 overflow-hidden rounded-3xl bg-brand-500 will-change-transform"
+              style={{
+                zIndex: 8 - i,
+                transform: "scale(0)",
+                backgroundImage: INNER_GLOW,
+              }}
             />
           ))}
         </div>
