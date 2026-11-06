@@ -116,6 +116,7 @@ export default function ServiciosPage() {
         overlap={10}
         brightness={15}
         contrast={-5}
+        colorPoints={[0, 0.6]}
       />
 
       {/* Áreas de servicio */}

@@ -17,11 +17,13 @@ export interface PageHeroProps {
   overlap: number;
   brightness: number;
   contrast: number;
+  /** color1Point / color2Point de Framer (0–1) */
+  colorPoints?: [number, number];
   /** contenido extra dentro del hero, bajo la imagen (p. ej. ticker de logos) */
   children?: React.ReactNode;
 }
 
-export default function PageHero({ title, subtitle, actions, image, alt, overlap, brightness, contrast, children }: PageHeroProps) {
+export default function PageHero({ title, subtitle, actions, image, alt, overlap, brightness, contrast, colorPoints = [0, 0.45], children }: PageHeroProps) {
   return (
     <section className="relative flex w-full flex-col items-center overflow-hidden bg-linear-to-b from-brand-100 to-neutral-100 pt-[94px]">
       <div className="relative z-[2] flex w-full max-w-[1200px] justify-center px-6 min-[810px]:px-10">
@@ -41,21 +43,25 @@ export default function PageHero({ title, subtitle, actions, image, alt, overlap
           src={image}
           alt={alt}
           sizing="fill"
+          // Framer: 200 columnas, Geist Mono escalada al ancho, line height 0.8.
+          // Bajo 810px se mantiene 12px con tracking negativo (200 columnas serían ilegibles).
+          outputWidth={200}
           fontSize={12}
+          fixedFontBelow={810}
           lineHeight={0.8}
           letterSpacing={-0.06}
           colorFrom="rgb(20, 77, 251)"
           colorTo="rgb(161, 184, 253)"
-          lightMax={1.25}
-          // Calibrado midiendo contra la web de Framer (tinta y color por nivel de gris, ±3 %)
-          brightness={brightness - 16}
-          contrast={contrast + 4}
+          colorPoints={colorPoints}
+          // Calibrado contra capturas de Framer (glifo elegido por nivel de gris en Clientes,
+          // Sobre nosotros y Servicios): su mapeo equivale al nuestro con brillo 0.4·b − 7 y contraste −14
+          brightness={brightness * 0.4 - 7}
+          contrast={contrast - 14}
           staticAmount={0.015}
           whiteCutoff={0.9}
           glowBlur={1}
           cursorWidth={16}
           cursorInvert
-          autoLevels
           className="absolute inset-0"
         />
       </div>

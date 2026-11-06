@@ -43,6 +43,9 @@ export interface ImageAsciiProps {
   glowBlur?: number;
   /** cuánto se acercan al color claro los caracteres más livianos (0–1) */
   lightMax?: number;
+  /** Framer color1Point/color2Point (0–1): el color va por brillo absoluto del carácter (sin
+   *  normalizar al rango de la imagen); bajo p1 = colorFrom, sobre p2 = colorTo */
+  colorPoints?: [number, number];
   /** "Static effect" de Framer: cada cuántos segundos se re-sortea el ruido */
   staticInterval?: number;
   /** amplitud del ruido sobre la densidad (0 = sin hormigueo) */
@@ -61,6 +64,9 @@ export interface ImageAsciiProps {
   fontSize?: number;
   /** tracking en em (negativo = caracteres más juntos); solo con fontSize */
   letterSpacing?: number;
+  /** con fontSize: el tamaño fijo solo se usa por debajo de este ancho de contenedor (px);
+   *  por encima, outputWidth columnas con el carácter escalado al ancho (como Framer) */
+  fixedFontBelow?: number;
   /** luminancia desde la que un píxel se considera blanco y no se dibuja (1 = nunca) */
   whiteCutoff?: number;
   className?: string;
@@ -80,6 +86,7 @@ export default function ImageAscii({
   cursorWidth = 32,
   glowBlur = 2,
   lightMax = 0.55,
+  colorPoints,
   // Intervalo de Framer (0.1s); a pedido solo cambia una fracción de celdas y con saltos cortos
   staticInterval = 0.1,
   staticAmount = 0.04,
@@ -90,10 +97,13 @@ export default function ImageAscii({
   lineHeight = 1,
   fontSize,
   letterSpacing = 0,
+  fixedFontBelow = Infinity,
   whiteCutoff = 1.01,
   className,
 }: ImageAsciiProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cp1 = colorPoints?.[0];
+  const cp2 = colorPoints?.[1];
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -110,7 +120,11 @@ export default function ImageAscii({
     const monoFamily = geistMonoFamily();
 
     // lightMax > 1 = el color claro se alcanza antes del final (Framer: color2Point 60 → 1/0.6)
-    const palette = Array.from({ length: BUCKETS }, (_, k) => mix(from, to, Math.min(1, ((k + 0.5) / BUCKETS) * lightMax)));
+    const p1 = cp1 ?? 0;
+    const p2 = cp2 ?? 1 / lightMax;
+    const palette = Array.from({ length: BUCKETS }, (_, k) =>
+      mix(from, to, Math.min(1, Math.max(0, ((k + 0.5) / BUCKETS - p1) / Math.max(0.001, p2 - p1)))),
+    );
     let bucketOf = new Uint8Array(0);
     let cancelled = false;
     let grid: Grid | null = null;
@@ -149,17 +163,19 @@ export default function ImageAscii({
       let cols: number;
       let colW: number;
       let fontPx: number;
-      if (fontSize) {
+      const mctx = canvas.getContext("2d");
+      if (mctx) mctx.font = `100px ${monoFamily}`;
+      const advRatio = mctx ? mctx.measureText("M").width / 100 : 0.6;
+      if (fontSize && W < fixedFontBelow) {
         fontPx = fontSize;
-        const mctx = canvas.getContext("2d");
-        if (mctx) mctx.font = `${fontPx}px ${monoFamily}`;
-        const advance = mctx ? mctx.measureText("M").width : fontPx * 0.6;
-        colW = Math.max(1, advance + letterSpacing * fontPx);
+        colW = Math.max(1, (advRatio + letterSpacing) * fontPx);
         cols = Math.max(1, Math.round(viewW / colW));
       } else {
+        // Framer: outputWidth columnas y el texto escalado para que el avance de Geist Mono
+        // llene la columna (celda 0.6em × lineHeight·em)
         cols = outputWidth;
         colW = viewW / cols;
-        fontPx = colW / 0.64;
+        fontPx = colW / (fontSize ? advRatio : 0.64);
       }
       const rowH = fontPx * lineHeight;
       const rows = Math.max(1, Math.round(viewH / rowH));
@@ -229,6 +245,10 @@ export default function ImageAscii({
         if (chars[i] === " ") continue;
         dMin = Math.min(dMin, dens[i]);
         dMax = Math.max(dMax, dens[i]);
+      }
+      if (cp1 !== undefined) {
+        dMin = 0;
+        dMax = 1;
       }
       const span = Math.max(dMax - dMin, 0.001);
       for (let i = 0; i < dens.length; i++) dens[i] = (dens[i] - dMin) / span;
@@ -400,7 +420,7 @@ export default function ImageAscii({
       hoverTarget.removeEventListener("pointermove", onMove);
       hoverTarget.removeEventListener("pointerleave", onLeave);
     };
-  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax, staticInterval, staticAmount, staticFraction, cursorInvert, autoLevels, sizing, lineHeight, whiteCutoff, fontSize, letterSpacing]);
+  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax, cp1, cp2, staticInterval, staticAmount, staticFraction, cursorInvert, autoLevels, sizing, lineHeight, whiteCutoff, fontSize, letterSpacing, fixedFontBelow]);
 
   const [gr, gg, gb] = parseRgb(colorFrom);
   const glowColor = `rgba(${gr}, ${gg}, ${gb}, 0.5)`;
