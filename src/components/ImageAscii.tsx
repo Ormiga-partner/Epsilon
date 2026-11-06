@@ -21,6 +21,11 @@ function mix(a: [number, number, number], b: [number, number, number], t: number
 
 const BUCKETS = 12;
 
+// Densidad (0–1) → carácter. El tope es "@" (no "$"): en la web de Framer las zonas más oscuras
+// se ven en @/B, no en el último carácter del ramp. El índice 0 (espacio) queda para vacíos.
+const MAX_GLYPH = DETAILED.length - 2;
+const glyphIndex = (l: number) => Math.max(1, Math.min(MAX_GLYPH, Math.round(l * MAX_GLYPH)));
+
 export interface ImageAsciiProps {
   src: string;
   alt: string;
@@ -209,7 +214,7 @@ export default function ImageAscii({
         l = (l - 0.5) * c + 0.5 + brightness / 100;
         l = Math.min(1, Math.max(0, l));
         if (invert) l = 1 - l;
-        chars[i] = DETAILED[Math.max(1, Math.floor(l * (DETAILED.length - 1)))];
+        chars[i] = DETAILED[glyphIndex(l)];
         dens[i] = l;
         base[i] = l;
       }
@@ -247,8 +252,9 @@ export default function ImageAscii({
       // cambio de fillStyle por tono); el glow va en un drop-shadow CSS del canvas.
       // Avance de la lente (lerp por frame) y de la intensidad
       if (target) {
-        lens.x += (target.x - lens.x) * 0.2;
-        lens.y += (target.y - lens.y) * 0.2;
+        // Framer: cursor smoothing 0 → el círculo sigue al cursor exacto (sin inercia)
+        lens.x = target.x;
+        lens.y = target.y;
       }
       strength += ((target ? 1 : 0) - strength) * 0.12;
       if (strength < 0.005) strength = 0;
@@ -290,19 +296,22 @@ export default function ImageAscii({
         }
       }
 
-      // Cursor "gradient" como en la web de Framer: alrededor del cursor los caracteres se aclaran
-      // (color claro) y se vuelven tenues, con un degradado suave; la forma de cada carácter no cambia.
+      // Cursor "gradient" + invert de Framer: dentro del círculo cada carácter pasa hacia su densidad
+      // opuesta (con degradado al borde) y toma el color que corresponde a esa nueva densidad, así los
+      // densos (@B8) se vuelven livianos y claros, y los livianos se vuelven densos.
       if (lensCells.length) {
-        const light = parseRgb(colorTo);
+        const { base, dens } = grid;
         for (const i of lensCells) {
           const x = i % cols;
           const y = (i - x) / cols;
           const px = ox + x * colW;
           const py = oy + y * rowH;
           const w = lensWeight(px, py);
-          ctx.fillStyle = mix(parseRgb(palette[bucketOf[i]]), light, w);
-          ctx.globalAlpha = 1 - 0.65 * w;
-          ctx.fillText(chars[i], px, py);
+          const lb = base[i] + (1 - 2 * base[i]) * w;
+          const ld = dens[i] + (1 - 2 * dens[i]) * w;
+          ctx.fillStyle = palette[Math.min(BUCKETS - 1, Math.floor((1 - ld) * BUCKETS))];
+          ctx.globalAlpha = 1;
+          ctx.fillText(DETAILED[glyphIndex(lb)], px, py);
         }
       }
 
@@ -317,13 +326,12 @@ export default function ImageAscii({
     const reroll = () => {
       if (!grid) return;
       const { chars, base } = grid;
-      const last = DETAILED.length - 1;
       for (let i = 0; i < chars.length; i++) {
         if (chars[i] === " ") continue;
         // solo una fracción de celdas cambia en cada paso: hormigueo suave, no parpadeo
         if (Math.random() > staticFraction) continue;
         const l = Math.min(1, Math.max(0.02, base[i] + (Math.random() * 2 - 1) * staticAmount));
-        chars[i] = DETAILED[Math.max(1, Math.round(l * last))];
+        chars[i] = DETAILED[glyphIndex(l)];
       }
       schedule();
     };

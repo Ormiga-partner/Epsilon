@@ -47,8 +47,11 @@ export default function PageHero({ title, subtitle, actions, image, alt, overlap
           colorFrom="rgb(20, 77, 251)"
           colorTo="rgb(161, 184, 253)"
           lightMax={1}
-          brightness={brightness}
-          contrast={contrast}
+          // Ajuste para igualar la definición de Framer: tonos corridos hacia lo denso (caras oscuras en
+          // @B, costados en mwZ), más contraste para zonas parejas y un hormigueo de menor amplitud
+          brightness={brightness - 22}
+          contrast={contrast + 25}
+          staticAmount={0.025}
           whiteCutoff={0.9}
           glowBlur={1}
           cursorWidth={16}
