@@ -1,8 +1,7 @@
 import Button from "@/components/ui/Button";
 import BlindsReveal from "@/components/framer/BlindsReveal";
 import DraggableCarousel from "@/components/framer/DraggableCarousel";
-import GlowEdge from "@/components/framer/GlowEdge";
-import ImageAscii from "@/components/ImageAscii";
+import ServicioCard from "@/components/ServicioCard";
 
 const servicios = [
   {
@@ -27,52 +26,6 @@ const servicios = [
   },
 ];
 
-// Componente "Servicios" de Framer (tarjeta 390×480 desktop / 300 mobile).
-// Capas como en Framer: fondo degradado → GlowEdge → capa gris rgb(237,237,237) → contenido.
-// En hover (variante gesture "hover") la capa gris pasa de opacidad 1 a 0 con un spring
-// (stiffness 300, damping 40) y deja ver el degradado y el borde iluminado.
-function ServicioCard({ title, text, image }: (typeof servicios)[number]) {
-  return (
-    <article className="group relative flex h-[440px] w-[300px] cursor-grab flex-col gap-8 overflow-hidden rounded-3xl bg-linear-to-b from-[rgb(242,245,255)] to-brand-100 p-6 active:cursor-grabbing md:h-[480px] md:w-[390px]">
-      {/* niveles=1: en Framer eran 3 por los wrappers del canvas; aquí el padre directo es la tarjeta.
-          zIndex 0 = wrapper de Framer, deja el borde bajo la capa gris hasta el hover. */}
-      <GlowEdge
-        style={{ zIndex: 0 }}
-        niveles={1}
-        heredarRadio
-        radio={24}
-        grosor={1.5}
-        color="var(--color-brand-300)"
-        degradado
-        colorFin="var(--color-brand-100)"
-        tamano={240}
-        nucleo={40}
-        opacidad={1}
-        proyectar={false}
-        halo
-        haloTamano={180}
-        haloDifuminado={10}
-        haloOpacidad={1}
-        modo="auto"
-        soloConHover
-        velocidad={0.3}
-        duracion={0.25}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[rgb(237,237,237)] opacity-100 transition-opacity duration-[450ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:opacity-0"
-      />
-      <div className="relative min-h-0 flex-1">
-        <ImageAscii src={image} alt={title} brightness={-15} className="absolute inset-0" />
-      </div>
-      <div className="relative z-[2] flex flex-col gap-4">
-        <h3 className="t-h3 text-balance text-neutral-900">{title}</h3>
-        <p className="t-body-m text-balance text-neutral-800">{text}</p>
-      </div>
-    </article>
-  );
-}
-
 export default function Servicios() {
   return (
     <section className="flex w-full max-w-[1200px] flex-col gap-10 bg-neutral-100 px-6 py-10 md:px-10">
@@ -84,9 +37,19 @@ export default function Servicios() {
           Ver todos
         </Button>
       </div>
-      <DraggableCarousel gap={24} padding={0} dragElastic={0.2} threshold={0.1} overflowVisible>
+      <DraggableCarousel
+        gap={24}
+        padding={0}
+        dragElastic={0.2}
+        threshold={0.1}
+        overflowVisible
+      >
         {servicios.map((s) => (
-          <ServicioCard key={s.title} {...s} />
+          <ServicioCard
+            key={s.title}
+            {...s}
+            className="h-[440px] w-[300px] cursor-grab active:cursor-grabbing md:h-[480px] md:w-[390px]"
+          />
         ))}
       </DraggableCarousel>
     </section>

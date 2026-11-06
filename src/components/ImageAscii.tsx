@@ -39,10 +39,16 @@ export interface ImageAsciiProps {
   staticInterval?: number;
   /** amplitud del ruido sobre la densidad (0 = sin hormigueo) */
   staticAmount?: number;
+  /** "fit": la imagen entera cabe (tarjetas) · "fill": cubre el contenedor (hero) */
+  sizing?: "fit" | "fill";
+  /** alto de línea en em (Framer: 1 en tarjetas, 0.8 en el hero de Servicios) */
+  lineHeight?: number;
+  /** luminancia desde la que un píxel se considera blanco y no se dibuja (1 = nunca) */
+  whiteCutoff?: number;
   className?: string;
 }
 
-type Grid = { chars: string[]; base: number[]; dens: number[]; cols: number; rows: number; colW: number; rowH: number; ox: number; oy: number };
+type Grid = { chars: string[]; base: number[]; dens: number[]; cols: number; rows: number; colW: number; rowH: number; fontPx: number; ox: number; oy: number };
 
 export default function ImageAscii({
   src,
@@ -58,6 +64,9 @@ export default function ImageAscii({
   lightMax = 0.55,
   staticInterval = 0.1,
   staticAmount = 0.06,
+  sizing = "fit",
+  lineHeight = 1,
+  whiteCutoff = 1.01,
   className,
 }: ImageAsciiProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -94,22 +103,32 @@ export default function ImageAscii({
       canvas.style.width = `${W}px`;
       canvas.style.height = `${H}px`;
 
-      // "fit" con la proporción de la imagen intacta (medido en la web de Framer).
-      // Celdas de texto monoespaciado: ancho ≈ 0.64em (glifo + tracking 0.02em), alto = 1em.
-      const scale = Math.min(W / img.naturalWidth, H / img.naturalHeight);
-      const dw = img.naturalWidth * scale;
-      const dh = img.naturalHeight * scale;
+      // Celdas de texto monoespaciado: ancho ≈ 0.64em (glifo + tracking 0.02em), alto = lineHeight·em.
+      //  - "fit": la imagen completa cabe en el contenedor, con su proporción (medido en Framer).
+      //  - "fill": la imagen cubre el contenedor (se recorta lo que sobra), columnas sobre el ancho visible.
+      const scale =
+        sizing === "fill"
+          ? Math.max(W / img.naturalWidth, H / img.naturalHeight)
+          : Math.min(W / img.naturalWidth, H / img.naturalHeight);
+      const viewW = sizing === "fill" ? W : img.naturalWidth * scale;
+      const viewH = sizing === "fill" ? H : img.naturalHeight * scale;
       const cols = outputWidth;
-      const colW = dw / cols;
-      const rowH = colW / 0.64;
-      const rows = Math.max(1, Math.round(dh / rowH));
+      const colW = viewW / cols;
+      const fontPx = colW / 0.64;
+      const rowH = fontPx * lineHeight;
+      const rows = Math.max(1, Math.round(viewH / rowH));
+      // Región de la imagen original que se ve (en "fit" es la imagen entera)
+      const sw = viewW / scale;
+      const sh = viewH / scale;
+      const sx = (img.naturalWidth - sw) / 2;
+      const sy = (img.naturalHeight - sh) / 2;
 
       const sample = document.createElement("canvas");
       sample.width = cols;
       sample.height = rows;
       const sctx = sample.getContext("2d", { willReadFrequently: true });
       if (!sctx) return;
-      sctx.drawImage(img, 0, 0, cols, rows);
+      sctx.drawImage(img, sx, sy, sw, sh, 0, 0, cols, rows);
       const data = sctx.getImageData(0, 0, cols, rows).data;
 
       const c = (contrast + 100) / 100;
@@ -123,6 +142,11 @@ export default function ImageAscii({
           continue;
         }
         let l = (0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2]) / 255;
+        // whiteMode "ignore" de Framer: los blancos no dibujan caracteres
+        if (l >= whiteCutoff) {
+          chars[i] = " ";
+          continue;
+        }
         l = (l - 0.5) * c + 0.5 + brightness / 100;
         l = Math.min(1, Math.max(0, l));
         if (invert) l = 1 - l;
@@ -142,7 +166,7 @@ export default function ImageAscii({
       for (let i = 0; i < dens.length; i++) dens[i] = (dens[i] - dMin) / span;
       bucketOf = new Uint8Array(dens.length);
       for (let i = 0; i < dens.length; i++) bucketOf[i] = Math.min(BUCKETS - 1, Math.floor((1 - dens[i]) * BUCKETS));
-      grid = { chars, base, dens, cols, rows, colW, rowH, ox: (W - dw) / 2, oy: (H - (rows * rowH)) / 2 };
+      grid = { chars, base, dens, cols, rows, colW, rowH, fontPx, ox: (W - viewW) / 2, oy: (H - rows * rowH) / 2 };
       draw();
     };
 
@@ -152,11 +176,11 @@ export default function ImageAscii({
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
       const dpr = canvas.width / parseFloat(canvas.style.width || "1");
-      const { chars, cols, rows, colW, rowH, ox, oy } = grid;
+      const { chars, cols, rows, colW, rowH, fontPx, ox, oy } = grid;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       // ctx.font no admite var(): se resuelve la familia de Geist Mono desde CSS
-      ctx.font = `${rowH}px ${monoFamily}`;
+      ctx.font = `${fontPx}px ${monoFamily}`;
       ctx.textBaseline = "top";
 
       // Color "gradient" de Framer: caracteres densos → colorFrom, livianos → colorTo.
@@ -244,7 +268,7 @@ export default function ImageAscii({
       hoverTarget.removeEventListener("pointermove", onMove);
       hoverTarget.removeEventListener("pointerleave", onLeave);
     };
-  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax, staticInterval, staticAmount]);
+  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax, staticInterval, staticAmount, sizing, lineHeight, whiteCutoff]);
 
   const [gr, gg, gb] = parseRgb(colorFrom);
   const glowColor = `rgba(${gr}, ${gg}, ${gb}, 0.5)`;
