@@ -18,6 +18,16 @@ export async function POST(request: Request) {
   if (!data.Nombre || !data.Empresa || !data.Solicitud || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.Correo)) {
     return Response.json({ error: "Faltan campos" }, { status: 422 });
   }
+  // Ley 21.719: sin consentimiento expreso no se tratan los datos
+  if (get("consentimiento") !== "si") {
+    return Response.json({ error: "Falta el consentimiento" }, { status: 422 });
+  }
+  // Registro del consentimiento (prueba: qué se aceptó, cuándo y qué versión de la política)
+  const consent = {
+    "Consentimiento tratamiento": `Sí (${new Date().toISOString()})`,
+    "Política aceptada": get("politica") || "sin versión",
+    "Comunicaciones comerciales": get("comerciales") === "si" ? "Sí" : "No",
+  };
 
   const key = process.env.RESEND_API_KEY;
   const from = process.env.CONTACT_FROM;
@@ -25,7 +35,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Envío de correo no configurado" }, { status: 503 });
   }
 
-  const rows = Object.entries(data)
+  const rows = Object.entries({ ...data, ...consent })
     .map(([k, v]) => `<p><strong>${k}:</strong><br>${esc(v).replace(/\n/g, "<br>")}</p>`)
     .join("");
   const res = await fetch("https://api.resend.com/emails", {
