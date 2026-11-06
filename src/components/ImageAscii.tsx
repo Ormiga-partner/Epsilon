@@ -6,6 +6,7 @@
 // (brand-700 → brand-100), glow blur 2, cursor "gradient" de 32 caracteres de ancho.
 
 import { useEffect, useRef } from "react";
+import { geistMonoFamily, loadGeistMono } from "@/lib/geistMono";
 
 const DETAILED = " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
 
@@ -78,10 +79,9 @@ export default function ImageAscii({
     // El cursor se sigue sobre toda la tarjeta (como en Framer, donde el área es la tarjeta)
     const hoverTarget = (canvas.closest("article") as HTMLElement | null) ?? parent;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const geistMono = getComputedStyle(document.documentElement).getPropertyValue("--font-geist-mono").trim();
     const from = parseRgb(colorFrom);
     const to = parseRgb(colorTo);
-    const monoFamily = `${geistMono ? `${geistMono}, ` : ""}ui-monospace, monospace`;
+    const monoFamily = geistMonoFamily();
 
     const palette = Array.from({ length: BUCKETS }, (_, k) => mix(from, to, ((k + 0.5) / BUCKETS) * lightMax));
     let bucketOf = new Uint8Array(0);
@@ -179,7 +179,7 @@ export default function ImageAscii({
       const { chars, cols, rows, colW, rowH, fontPx, ox, oy } = grid;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // ctx.font no admite var(): se resuelve la familia de Geist Mono desde CSS
+      // Geist Mono (ctx.font no admite var(): ver lib/geistMono)
       ctx.font = `${fontPx}px ${monoFamily}`;
       ctx.textBaseline = "top";
 
@@ -253,6 +253,10 @@ export default function ImageAscii({
 
     img.onload = compute;
     if (img.complete) compute();
+    // Geist Mono puede no estar descargada aún (el canvas no la dispara): se pide y se redibuja
+    loadGeistMono(12).then(() => {
+      if (!cancelled) draw();
+    });
     const ro = new ResizeObserver(compute);
     ro.observe(parent);
     if (!reduced) {

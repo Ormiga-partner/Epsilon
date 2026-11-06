@@ -8,6 +8,7 @@ import {
     useCallback,
     useSyncExternalStore,
 } from "react"
+import { geistMonoFamily, loadGeistMono } from "@/lib/geistMono"
 import type React from "react"
 
 /* ------------------------------------------------------------------
@@ -354,7 +355,8 @@ function Card({
         if (!actx) return
         actx.setTransform(dpr, 0, 0, dpr, 0, 0)
         actx.clearRect(0, 0, cw * chars.length, ch)
-        actx.font = `${size}px ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace`
+        // Glifos ASCII en Geist Mono (el original usaba ui-monospace)
+        actx.font = `${size}px ${geistMonoFamily()}`
         actx.textAlign = "center"
         actx.textBaseline = "middle"
         actx.fillStyle = colorRef.current
@@ -386,7 +388,15 @@ function Card({
         }
         colorRef.current = resolved
         buildAtlas()
-    }, [item.dotsColor, buildAtlas])
+        // Rehace el atlas cuando Geist Mono termina de descargarse
+        let alive = true
+        loadGeistMono(fx.glyphSize).then(() => {
+            if (alive) buildAtlas()
+        })
+        return () => {
+            alive = false
+        }
+    }, [item.dotsColor, buildAtlas, fx.glyphSize])
 
     // ---- construir grilla ----
     const build = useCallback(() => {

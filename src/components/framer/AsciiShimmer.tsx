@@ -8,6 +8,7 @@ import {
     useState,
     type CSSProperties,
 } from "react"
+import { geistMonoFamily } from "@/lib/geistMono"
 
 /**
  * ASCII SHIMMER
@@ -25,7 +26,7 @@ export interface AsciiShimmerProps {
     cell?: number
     /** Tamaño (px). Default 11 */
     fontSize?: number
-    /** Default "ui-monospace, SFMono-Regular, Menlo, monospace" */
+    /** Default: Geist Mono (lib/geistMono) */
     fontFamily?: string
     /** Default "#9AA0A6" */
     baseColor?: string
@@ -67,7 +68,7 @@ export default function AsciiShimmer(props: AsciiShimmerProps) {
         charset = "01<>/\\|*+=-#%$&@",
         cell = 14,
         fontSize = 11,
-        fontFamily = "ui-monospace, SFMono-Regular, Menlo, monospace",
+        fontFamily,
         baseColor = "#9AA0A6",
         accentColor = "#3B5BFF",
         accentChance = 0.12,
@@ -155,7 +156,7 @@ export default function AsciiShimmer(props: AsciiShimmerProps) {
 
         const draw = () => {
             ctx.clearRect(0, 0, box.w, box.h)
-            ctx.font = `${fontSize}px ${fontFamily}`
+            ctx.font = `${fontSize}px ${fontFamily ?? geistMonoFamily()}`
             ctx.textAlign = "center"
             ctx.textBaseline = "middle"
             const cellsArr = cellsRef.current

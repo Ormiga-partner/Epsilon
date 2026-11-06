@@ -2,6 +2,7 @@
 // Portado desde Framer: Text_Dots.tsx
 
 import { useEffect, useRef, useState, type CSSProperties } from "react"
+import { geistMonoFamily } from "@/lib/geistMono"
 
 /**
  * ASCII TEXT
@@ -122,7 +123,7 @@ export default function AsciiText(props: AsciiTextProps) {
         vals: new Float32Array(0),
         cellW: 1,
         cellH: 1,
-        charCSS: "12px monospace",
+        charCSS: `12px ${geistMonoFamily()}`,
     })
 
     // ---- Construir la grilla (densidad por celda) --------------------------
@@ -374,7 +375,7 @@ function textToAscii(
         vals: new Float32Array(0),
         cellW: 1,
         cellH: 1,
-        charCSS: `${charSize}px monospace`,
+        charCSS: `${charSize}px ${geistMonoFamily()}`,
     }
     if (!text || typeof document === "undefined") return empty
 
@@ -383,7 +384,7 @@ function textToAscii(
     if (!ctx) return empty
 
     // 1) Métricas del caracter ASCII (define el aspecto de la celda)
-    const charFont = resolveFont(charFontObj, charSize, "monospace")
+    const charFont = resolveFont(charFontObj, charSize, geistMonoFamily())
     ctx.font = charFont.css
     const cm = ctx.measureText("M")
     const advance = Math.max(1, cm.width)
