@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import CookieSettingsLink from "@/components/layout/CookieSettingsLink";
 
 const columns = [
   {
@@ -71,6 +72,7 @@ export default function Footer() {
           <Link href="/legal/politicas-de-privacidad" className={linkClass}>
             Políticas de privacidad
           </Link>
+          <CookieSettingsLink className={`${linkClass} cursor-pointer`} />
         </div>
       </div>
     </footer>

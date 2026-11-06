@@ -3,6 +3,7 @@ import SmoothScroll from "@/components/SmoothScroll";
 import AsciiText from "@/components/framer/AsciiText";
 import Footer from "@/components/layout/Footer";
 import Nav from "@/components/layout/Nav";
+import CookieConsent from "@/components/CookieConsent";
 import ProgressiveBlur from "@/components/layout/ProgressiveBlur";
 import Button from "@/components/ui/Button";
 
@@ -15,6 +16,7 @@ export default function NotFound() {
     <SmoothScroll>
       <ProgressiveBlur />
       <Nav />
+      <CookieConsent />
       <div className="flex w-full flex-col items-center overflow-x-clip bg-neutral-100">
         <main className="flex min-h-screen w-full flex-col items-center justify-center px-4 pt-[94px]">
           <div className="flex w-full flex-col items-center gap-6">

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 // Texto de la página "/legal/políticas-de-privacidad" de Framer, actualizado a este sitio:
-// proveedores (Cloudflare y Resend en lugar de Framer y Google Analytics, que no se usan aquí),
+// proveedores (Cloudflare en lugar de Framer, más Google Analytics con consentimiento de cookies),
 // campo "Solicitud" y registro de consentimiento, y correo de contacto unificado.
 const MAIL = "contacto@epsilonwork.cl";
 
@@ -129,11 +129,12 @@ export default function PrivacidadPage() {
               <ul>
                 <li>
                   <strong>Cloudflare:</strong> alojamiento y operación del sitio
-                  web.
+                  web, y envío por correo de los mensajes del formulario
+                  (Cloudflare Email).
                 </li>
                 <li>
-                  <strong>Resend:</strong> envío por correo electrónico de los
-                  mensajes del formulario.
+                  <strong>Google:</strong> Google Analytics, analítica de uso
+                  del sitio, solo si aceptas las cookies de analítica.
                 </li>
               </ul>
               <p>
@@ -149,14 +150,36 @@ export default function PrivacidadPage() {
         {
           title: "Cookies y analítica",
           body: (
-            <p>
-              Este sitio no utiliza cookies de analítica ni de publicidad. Solo
-              usa almacenamiento técnico del navegador (por ejemplo, para no
-              repetir la animación de carga durante tu visita), que no te
-              identifica y se elimina al cerrar la pestaña. Si en el futuro
-              incorporamos herramientas de analítica, actualizaremos esta
-              política y te pediremos tu consentimiento cuando corresponda.
-            </p>
+            <>
+              <p>
+                Este sitio utiliza Google Analytics para medir y analizar de
+                forma agregada el uso de la página mediante cookies, lo que nos
+                permite mejorar la experiencia del sitio. Estas cookies{" "}
+                <strong>solo se activan si las aceptas</strong> en el aviso de
+                cookies; si las rechazas, Google Analytics no se carga.
+              </p>
+              <ul>
+                <li>
+                  <strong>_ga:</strong> distingue visitantes de forma seudónima.
+                  Duración: hasta 2 años.
+                </li>
+                <li>
+                  <strong>_ga_&lt;ID&gt;:</strong> mantiene el estado de la
+                  sesión. Duración: hasta 2 años.
+                </li>
+              </ul>
+              <p>
+                Además, el sitio guarda en tu navegador datos técnicos
+                necesarios que no te identifican: tu decisión sobre las cookies
+                y si ya viste la animación de carga en esta visita.
+              </p>
+              <p>
+                Puedes cambiar o retirar tu consentimiento en cualquier momento
+                desde el enlace “Configuración de cookies” al pie del sitio, o
+                bloquear y eliminar cookies desde la configuración de tu
+                navegador.
+              </p>
+            </>
           ),
         },
         {

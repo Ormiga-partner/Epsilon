@@ -1,5 +1,6 @@
 import SmoothScroll from "@/components/SmoothScroll";
 import Nav from "@/components/layout/Nav";
+import CookieConsent from "@/components/CookieConsent";
 import ProgressiveBlur from "@/components/layout/ProgressiveBlur";
 import RouteCTA from "@/components/layout/RouteCTA";
 import Footer from "@/components/layout/Footer";
@@ -10,6 +11,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
     <SmoothScroll>
       <ProgressiveBlur />
       <Nav />
+      <CookieConsent />
       <div className="flex w-full flex-col items-center gap-20 overflow-x-clip bg-neutral-100">
         {children}
         <div className="flex w-full flex-col">
