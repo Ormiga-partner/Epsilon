@@ -28,11 +28,15 @@ const columns = [
   },
 ];
 
-const linkClass = "t-body-s text-neutral-700 transition-colors hover:text-brand-500";
+// Todos los links del footer comparten estado: activos (negro) por defecto; al pasar el cursor
+// por cualquiera, ese sigue activo y TODOS los demás (de todas las columnas) quedan inactivos
+// (mismo negro al 50 %). Al sacar el cursor, todos vuelven a activo.
+const linkClass =
+  "footer-link t-body-s text-neutral-900 transition-opacity duration-200 group-has-[.footer-link:hover]/footer:opacity-50 hover:opacity-100!";
 
 export default function Footer() {
   return (
-    <footer className="flex w-full flex-col items-center gap-20 bg-neutral-100 p-6 md:p-10">
+    <footer className="group/footer flex w-full flex-col items-center gap-20 bg-neutral-100 p-6 md:p-10">
       <div className="flex w-full max-w-[1200px] flex-col gap-8 lg:flex-row">
         <div className="flex flex-1 flex-col gap-6">
           <Link href="/" aria-label="Epsilon Work, inicio">
@@ -61,10 +65,10 @@ export default function Footer() {
       <div className="flex w-full max-w-[1200px] flex-col gap-4 md:flex-row">
         <p className="t-body-s flex-1 text-neutral-800">© Epsilon Work · todos los derechos reservados</p>
         <div className="flex gap-4">
-          <Link href="/legal/terminos-y-condiciones" className="t-body-s text-neutral-800 hover:text-brand-500">
+          <Link href="/legal/terminos-y-condiciones" className={linkClass}>
             Términos y condiciones
           </Link>
-          <Link href="/legal/politicas-de-privacidad" className="t-body-s text-neutral-800 hover:text-brand-500">
+          <Link href="/legal/politicas-de-privacidad" className={linkClass}>
             Políticas de privacidad
           </Link>
         </div>
