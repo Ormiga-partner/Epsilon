@@ -40,6 +40,8 @@ export interface ImageAsciiProps {
   staticInterval?: number;
   /** amplitud del ruido sobre la densidad (0 = sin hormigueo) */
   staticAmount?: number;
+  /** Framer "cursor invert": la lente invierte la densidad en vez de borrar */
+  cursorInvert?: boolean;
   /** fracción de celdas que cambian en cada paso (0–1) */
   staticFraction?: number;
   /** "fit": la imagen entera cabe (tarjetas) · "fill": cubre el contenedor (hero) */
@@ -73,6 +75,7 @@ export default function ImageAscii({
   staticInterval = 0.1,
   staticAmount = 0.04,
   staticFraction = 0.15,
+  cursorInvert = false,
   sizing = "fit",
   lineHeight = 1,
   fontSize,
@@ -87,7 +90,10 @@ export default function ImageAscii({
     const parent = canvas?.parentElement;
     if (!canvas || !parent) return;
     // El cursor se sigue sobre toda la tarjeta (como en Framer, donde el área es la tarjeta)
-    const hoverTarget = (canvas.closest("article") as HTMLElement | null) ?? parent;
+    // Área del cursor: la tarjeta (article) o la sección del hero completa (así responde también
+    // cuando el cursor pasa sobre el título que tapa parte de la imagen)
+    const hoverTarget =
+      (canvas.closest("article") as HTMLElement | null) ?? (canvas.closest("section") as HTMLElement | null) ?? parent;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const from = parseRgb(colorFrom);
     const to = parseRgb(colorTo);
@@ -97,7 +103,11 @@ export default function ImageAscii({
     let bucketOf = new Uint8Array(0);
     let cancelled = false;
     let grid: Grid | null = null;
-    let pointer: { x: number; y: number } | null = null;
+    // Cursor con inercia: `target` es la posición real, `lens` la que se dibuja (persigue al target),
+    // `strength` crece al entrar y se desvanece al salir.
+    let target: { x: number; y: number } | null = null;
+    const lens = { x: 0, y: 0 };
+    let strength = 0;
     let raf = 0;
     const img = new Image();
     img.src = src;
@@ -210,7 +220,29 @@ export default function ImageAscii({
       // Color "gradient" de Framer: caracteres densos → colorFrom, livianos → colorTo.
       // Rendimiento: los colores se agrupan en BUCKETS tonos y se dibujan por grupo (un solo
       // cambio de fillStyle por tono); el glow va en un drop-shadow CSS del canvas.
+      // Avance de la lente (lerp por frame) y de la intensidad
+      if (target) {
+        lens.x += (target.x - lens.x) * 0.2;
+        lens.y += (target.y - lens.y) * 0.2;
+      }
+      strength += ((target ? 1 : 0) - strength) * 0.12;
+      if (strength < 0.005) strength = 0;
+
       const radius = (cursorWidth / 2) * colW;
+      const r2 = radius * radius;
+      const last = DETAILED.length - 1;
+      // peso de la lente en una celda: 1 en el centro → 0 en el borde (smoothstep), por la intensidad
+      const lensWeight = (px: number, py: number) => {
+        if (!strength) return 0;
+        const dx = px + colW / 2 - lens.x;
+        const dy = py + rowH / 2 - lens.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 >= r2) return 0;
+        const t = Math.sqrt(d2) / radius;
+        return (1 - t * t * (3 - 2 * t)) * strength;
+      };
+
+      const lensCells: number[] = [];
       for (let bkt = 0; bkt < BUCKETS; bkt++) {
         ctx.fillStyle = palette[bkt];
         for (let y = 0; y < rows; y++) {
@@ -220,17 +252,41 @@ export default function ImageAscii({
             if (ch === " " || bucketOf[i] !== bkt) continue;
             const px = ox + x * colW;
             const py = oy + y * rowH;
-            let alpha = 1;
-            if (pointer) {
-              const d = Math.hypot(px + colW / 2 - pointer.x, py + rowH / 2 - pointer.y);
-              if (d < radius) alpha = d / radius; // degradado: transparente en el centro del cursor
+            const w = lensWeight(px, py);
+            if (w > 0.02 && cursorInvert) {
+              lensCells.push(i); // se dibuja después, invertida
+              continue;
             }
+            // borrado con degradado suave
+            const alpha = 1 - w;
             if (alpha <= 0.02) continue;
             if (alpha !== ctx.globalAlpha) ctx.globalAlpha = alpha;
             ctx.fillText(ch, px, py);
           }
         }
       }
+
+      // Invert (Framer "invert"): dentro de la lente los caracteres pasan a su densidad opuesta
+      // y toman el color intenso, como una lupa en negativo.
+      if (lensCells.length) {
+        const base = grid.base;
+        ctx.fillStyle = colorFrom;
+        for (const i of lensCells) {
+          const x = i % cols;
+          const y = (i - x) / cols;
+          const px = ox + x * colW;
+          const py = oy + y * rowH;
+          const w = lensWeight(px, py);
+          const l = base[i] + (1 - 2 * base[i]) * w;
+          const ch = DETAILED[Math.max(1, Math.round(l * last))];
+          ctx.globalAlpha = 0.55 + 0.45 * w;
+          ctx.fillText(ch, px, py);
+        }
+      }
+
+      // sigue animando mientras la lente no llegue al cursor o la intensidad no se asiente
+      const moving = target ? Math.abs(target.x - lens.x) + Math.abs(target.y - lens.y) > 0.5 : false;
+      if (moving || (strength > 0 && strength < 0.995) || (!target && strength > 0)) schedule();
       ctx.globalAlpha = 1;
     };
 
@@ -269,11 +325,17 @@ export default function ImageAscii({
     };
     const onMove = (e: PointerEvent) => {
       const r = canvas.getBoundingClientRect();
-      pointer = { x: e.clientX - r.left, y: e.clientY - r.top };
+      const p = { x: e.clientX - r.left, y: e.clientY - r.top };
+      // al entrar, la lente nace en el cursor (sin viajar desde la esquina)
+      if (!target && strength === 0) {
+        lens.x = p.x;
+        lens.y = p.y;
+      }
+      target = p;
       schedule();
     };
     const onLeave = () => {
-      pointer = null;
+      target = null;
       schedule();
     };
 
@@ -298,7 +360,7 @@ export default function ImageAscii({
       hoverTarget.removeEventListener("pointermove", onMove);
       hoverTarget.removeEventListener("pointerleave", onLeave);
     };
-  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax, staticInterval, staticAmount, staticFraction, sizing, lineHeight, whiteCutoff, fontSize, letterSpacing]);
+  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax, staticInterval, staticAmount, staticFraction, cursorInvert, sizing, lineHeight, whiteCutoff, fontSize, letterSpacing]);
 
   const [gr, gg, gb] = parseRgb(colorFrom);
   const glowColor = `rgba(${gr}, ${gg}, ${gb}, 0.5)`;
