@@ -60,7 +60,7 @@ export default function ServicioCard({
         />
       </div>
       <div className="relative z-[2] flex flex-col gap-4">
-        <h3 className="t-h3 text-balance text-neutral-900">{title}</h3>
+        <h3 className="t-h3 text-balance hyphens-auto break-words text-neutral-900">{title}</h3>
         <p className="t-body-m text-balance text-neutral-800">{text}</p>
       </div>
     </article>
