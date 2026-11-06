@@ -69,8 +69,8 @@ export default function ImageAscii({
   cursorWidth = 32,
   glowBlur = 2,
   lightMax = 0.55,
-  // Suavizado a pedido (Framer: 0.1s y todas las celdas): más lento, menos celdas, saltos cortos
-  staticInterval = 0.25,
+  // Intervalo de Framer (0.1s); a pedido solo cambia una fracción de celdas y con saltos cortos
+  staticInterval = 0.1,
   staticAmount = 0.04,
   staticFraction = 0.15,
   sizing = "fit",
