@@ -101,7 +101,7 @@ export default function Nav() {
 
           <nav
             aria-label="Principal"
-            className="absolute top-1/2 left-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-3 md:flex"
+            className="absolute top-1/2 left-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-6 md:flex"
           >
             {links.map((l) => (
               <Link
