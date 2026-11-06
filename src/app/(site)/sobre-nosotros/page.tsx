@@ -60,11 +60,12 @@ export default function SobreNosotrosPage() {
             sizing="fill"
             outputWidth={200}
             lineHeight={0.8}
-            colorFrom="rgb(20, 77, 251)"
+            colorFrom="rgb(67, 113, 252)"
             colorTo="rgb(161, 184, 253)"
             lightMax={1}
-            brightness={10}
-            contrast={5}
+            // Suavizado a pedido: las montañas casi negras caían en los glifos más densos
+            brightness={38}
+            contrast={-25}
             whiteCutoff={0.9}
             glowBlur={1}
             cursorWidth={16}
