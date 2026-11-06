@@ -53,6 +53,7 @@ export default function PageHero({ title, subtitle, actions, image, alt, overlap
           glowBlur={1}
           cursorWidth={16}
           cursorInvert
+          autoLevels
           className="absolute inset-0"
         />
       </div>

@@ -40,7 +40,9 @@ export interface ImageAsciiProps {
   staticInterval?: number;
   /** amplitud del ruido sobre la densidad (0 = sin hormigueo) */
   staticAmount?: number;
-  /** Framer "cursor invert": la lente invierte la densidad en vez de borrar */
+  /** niveles automáticos: estira los grises reales de la imagen a todo el ramp (más definición) */
+  autoLevels?: boolean;
+  /** cursor que aclara/atenúa los caracteres (heros) en vez de borrarlos (tarjetas) */
   cursorInvert?: boolean;
   /** fracción de celdas que cambian en cada paso (0–1) */
   staticFraction?: number;
@@ -76,6 +78,7 @@ export default function ImageAscii({
   staticAmount = 0.04,
   staticFraction = 0.15,
   cursorInvert = false,
+  autoLevels = false,
   sizing = "fit",
   lineHeight = 1,
   fontSize,
@@ -166,25 +169,47 @@ export default function ImageAscii({
       const data = sctx.getImageData(0, 0, cols, rows).data;
 
       const c = (contrast + 100) / 100;
-      const chars: string[] = new Array(cols * rows);
-      const dens: number[] = new Array(cols * rows).fill(0);
-      const base: number[] = new Array(cols * rows).fill(0);
-      for (let i = 0; i < cols * rows; i++) {
+      const n = cols * rows;
+      const chars: string[] = new Array(n);
+      const dens: number[] = new Array(n).fill(0);
+      const base: number[] = new Array(n).fill(0);
+      // 1) luminancia de cada celda (-1 = vacía: transparente o blanca ignorada)
+      const lum = new Float32Array(n);
+      const vals: number[] = [];
+      for (let i = 0; i < n; i++) {
         const p = i * 4;
-        if (data[p + 3] < 20) {
-          chars[i] = " ";
-          continue;
-        }
-        let l = (0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2]) / 255;
+        const l = (0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2]) / 255;
         // whiteMode "ignore" de Framer: los blancos no dibujan caracteres
-        if (l >= whiteCutoff) {
+        if (data[p + 3] < 20 || l >= whiteCutoff) {
+          lum[i] = -1;
+          continue;
+        }
+        lum[i] = l;
+        vals.push(l);
+      }
+      // 2) Niveles automáticos: los grises reales de la imagen (percentil 2 → 98) se estiran a todo
+      //    el ramp, así caras oscuras, costados grises y ventanas caen en caracteres distintos.
+      let lo = 0;
+      let hi = 1;
+      if (autoLevels && vals.length > 20) {
+        vals.sort((a, b) => a - b);
+        lo = vals[Math.floor(vals.length * 0.02)];
+        hi = vals[Math.floor(vals.length * 0.98)];
+        if (hi - lo < 0.05) {
+          lo = 0;
+          hi = 1;
+        }
+      }
+      for (let i = 0; i < n; i++) {
+        if (lum[i] < 0) {
           chars[i] = " ";
           continue;
         }
+        let l = autoLevels ? (lum[i] - lo) / (hi - lo) : lum[i];
         l = (l - 0.5) * c + 0.5 + brightness / 100;
         l = Math.min(1, Math.max(0, l));
         if (invert) l = 1 - l;
-        chars[i] = DETAILED[Math.floor(l * (DETAILED.length - 1))];
+        chars[i] = DETAILED[Math.max(1, Math.floor(l * (DETAILED.length - 1)))];
         dens[i] = l;
         base[i] = l;
       }
@@ -230,7 +255,6 @@ export default function ImageAscii({
 
       const radius = (cursorWidth / 2) * colW;
       const r2 = radius * radius;
-      const last = DETAILED.length - 1;
       // peso de la lente en una celda: 1 en el centro → 0 en el borde (smoothstep), por la intensidad
       const lensWeight = (px: number, py: number) => {
         if (!strength) return 0;
@@ -254,7 +278,7 @@ export default function ImageAscii({
             const py = oy + y * rowH;
             const w = lensWeight(px, py);
             if (w > 0.02 && cursorInvert) {
-              lensCells.push(i); // se dibuja después, invertida
+              lensCells.push(i); // se dibuja después, aclarada
               continue;
             }
             // borrado con degradado suave
@@ -266,21 +290,19 @@ export default function ImageAscii({
         }
       }
 
-      // Invert (Framer "invert"): dentro de la lente los caracteres pasan a su densidad opuesta
-      // y toman el color intenso, como una lupa en negativo.
+      // Cursor "gradient" como en la web de Framer: alrededor del cursor los caracteres se aclaran
+      // (color claro) y se vuelven tenues, con un degradado suave; la forma de cada carácter no cambia.
       if (lensCells.length) {
-        const base = grid.base;
-        ctx.fillStyle = colorFrom;
+        const light = parseRgb(colorTo);
         for (const i of lensCells) {
           const x = i % cols;
           const y = (i - x) / cols;
           const px = ox + x * colW;
           const py = oy + y * rowH;
           const w = lensWeight(px, py);
-          const l = base[i] + (1 - 2 * base[i]) * w;
-          const ch = DETAILED[Math.max(1, Math.round(l * last))];
-          ctx.globalAlpha = 0.55 + 0.45 * w;
-          ctx.fillText(ch, px, py);
+          ctx.fillStyle = mix(parseRgb(palette[bucketOf[i]]), light, w);
+          ctx.globalAlpha = 1 - 0.65 * w;
+          ctx.fillText(chars[i], px, py);
         }
       }
 
@@ -360,7 +382,7 @@ export default function ImageAscii({
       hoverTarget.removeEventListener("pointermove", onMove);
       hoverTarget.removeEventListener("pointerleave", onLeave);
     };
-  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax, staticInterval, staticAmount, staticFraction, cursorInvert, sizing, lineHeight, whiteCutoff, fontSize, letterSpacing]);
+  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax, staticInterval, staticAmount, staticFraction, cursorInvert, autoLevels, sizing, lineHeight, whiteCutoff, fontSize, letterSpacing]);
 
   const [gr, gg, gb] = parseRgb(colorFrom);
   const glowColor = `rgba(${gr}, ${gg}, ${gb}, 0.5)`;
