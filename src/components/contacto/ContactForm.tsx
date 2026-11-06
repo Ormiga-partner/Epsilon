@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 // Versión de la política de privacidad aceptada (se registra junto al consentimiento)
-export const PRIVACY_VERSION = "2026-12";
+export const PRIVACY_VERSION = "2026-11-06";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -78,12 +78,12 @@ export default function ContactForm() {
           específico e inequívoco (casilla sin marcar). Comunicaciones comerciales: consentimiento aparte. */}
       <div className="t-body-s w-full rounded-lg bg-neutral-200 p-3 text-neutral-800">
         <p>
-          <strong className="font-medium text-neutral-900">Responsable:</strong> Epsilon Work.{" "}
+          <strong className="font-medium text-neutral-900">Responsable:</strong> Epsilon Work SPA.{" "}
           <strong className="font-medium text-neutral-900">Finalidad:</strong> responder tu solicitud y, si
           corresponde, enviarte una cotización. <strong className="font-medium text-neutral-900">Base:</strong> tu
           consentimiento, que puedes retirar en cualquier momento.{" "}
-          <strong className="font-medium text-neutral-900">Conservación:</strong> solo el tiempo necesario para
-          gestionar tu solicitud. <strong className="font-medium text-neutral-900">Derechos:</strong> acceso,
+          <strong className="font-medium text-neutral-900">Conservación:</strong> 6 meses o hasta que solicites su
+          eliminación. <strong className="font-medium text-neutral-900">Derechos:</strong> acceso,
           rectificación, supresión, oposición, portabilidad y bloqueo, escribiendo a{" "}
           <a href="mailto:contacto@epsilonwork.cl" className="underline underline-offset-2">
             contacto@epsilonwork.cl
