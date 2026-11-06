@@ -42,16 +42,15 @@ export default function PageHero({ title, subtitle, actions, image, alt, overlap
           alt={alt}
           sizing="fill"
           fontSize={12}
-          lineHeight={0.75}
+          lineHeight={0.8}
           letterSpacing={-0.06}
           colorFrom="rgb(20, 77, 251)"
           colorTo="rgb(161, 184, 253)"
-          lightMax={1}
-          // Ajuste para igualar la definición de Framer: tonos corridos hacia lo denso (caras oscuras en
-          // @B, costados en mwZ), más contraste para zonas parejas y un hormigueo de menor amplitud
-          brightness={brightness - 22}
-          contrast={contrast + 25}
-          staticAmount={0.025}
+          lightMax={1.25}
+          // Calibrado midiendo contra la web de Framer (tinta y color por nivel de gris, ±3 %)
+          brightness={brightness - 16}
+          contrast={contrast + 4}
+          staticAmount={0.015}
           whiteCutoff={0.9}
           glowBlur={1}
           cursorWidth={16}

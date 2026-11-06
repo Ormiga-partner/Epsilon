@@ -20,6 +20,8 @@ function mix(a: [number, number, number], b: [number, number, number], t: number
 }
 
 const BUCKETS = 12;
+// amplitud del movimiento de caracteres dentro del círculo del cursor
+const LENS_NOISE = 0.18;
 
 // Densidad (0–1) → carácter. El tope es "@" (no "$"): en la web de Framer las zonas más oscuras
 // se ven en @/B, no en el último carácter del ramp. El índice 0 (espacio) queda para vacíos.
@@ -107,7 +109,8 @@ export default function ImageAscii({
     const to = parseRgb(colorTo);
     const monoFamily = geistMonoFamily();
 
-    const palette = Array.from({ length: BUCKETS }, (_, k) => mix(from, to, ((k + 0.5) / BUCKETS) * lightMax));
+    // lightMax > 1 = el color claro se alcanza antes del final (Framer: color2Point 60 → 1/0.6)
+    const palette = Array.from({ length: BUCKETS }, (_, k) => mix(from, to, Math.min(1, ((k + 0.5) / BUCKETS) * lightMax)));
     let bucketOf = new Uint8Array(0);
     let cancelled = false;
     let grid: Grid | null = null;
@@ -116,6 +119,7 @@ export default function ImageAscii({
     let target: { x: number; y: number } | null = null;
     const lens = { x: 0, y: 0 };
     let strength = 0;
+    let lensNoise = new Float32Array(0);
     let raf = 0;
     const img = new Image();
     img.src = src;
@@ -307,7 +311,8 @@ export default function ImageAscii({
           const px = ox + x * colW;
           const py = oy + y * rowH;
           const w = lensWeight(px, py);
-          const lb = base[i] + (1 - 2 * base[i]) * w;
+          const bn = Math.min(1, Math.max(0, base[i] + (lensNoise[i] ?? 0) * w));
+          const lb = bn + (1 - 2 * bn) * w;
           const ld = dens[i] + (1 - 2 * dens[i]) * w;
           ctx.fillStyle = palette[Math.min(BUCKETS - 1, Math.floor((1 - ld) * BUCKETS))];
           ctx.globalAlpha = 1;
@@ -326,6 +331,11 @@ export default function ImageAscii({
     const reroll = () => {
       if (!grid) return;
       const { chars, base } = grid;
+      // dentro del círculo del cursor los caracteres siguen moviéndose (todas las celdas, más amplitud)
+      if (strength > 0) {
+        if (lensNoise.length !== chars.length) lensNoise = new Float32Array(chars.length);
+        for (let i = 0; i < lensNoise.length; i++) lensNoise[i] = (Math.random() * 2 - 1) * LENS_NOISE;
+      }
       for (let i = 0; i < chars.length; i++) {
         if (chars[i] === " ") continue;
         // solo una fracción de celdas cambia en cada paso: hormigueo suave, no parpadeo
