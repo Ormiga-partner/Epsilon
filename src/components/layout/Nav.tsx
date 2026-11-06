@@ -4,6 +4,7 @@
 // - Variante 1 (arriba): contenedor 1200px, padding 0 28px, pastilla transparente sin blur.
 // - Variante 2 (al bajar, cuando el hero queda visible < 50%): contenedor 898px con padding
 //   16px 24px 0, pastilla máx. 800px, fondo rgba(194,194,194,.5), blur 10px, padding 8 12 8 24.
+//   Ajustado más compacto a pedido: pastilla 640px, padding 6 8 6 16, logo 32px.
 //   Transiciones: ancho spring 1.4s sin rebote; pastilla spring 0.4s.
 // Links centrados respecto a la pastilla (posición absoluta al 50%), aunque el padding sea asimétrico.
 
@@ -64,10 +65,14 @@ export default function Nav() {
       }}
     >
       <div
-        className="relative mx-auto w-full rounded-[28px] py-2 pr-3"
+        className="relative mx-auto w-full rounded-[28px]"
         style={{
-          maxWidth: compact ? 800 : 1200,
-          paddingLeft: compact ? 24 : 12,
+          // Compacto: más angosto y bajo que la variante 2 de Framer (pedido del cliente)
+          maxWidth: compact ? 640 : 1200,
+          paddingTop: compact ? 6 : 8,
+          paddingBottom: compact ? 6 : 8,
+          paddingLeft: compact ? 16 : 12,
+          paddingRight: compact ? 8 : 12,
           backgroundColor: glass
             ? "rgba(194, 194, 194, 0.5)"
             : "rgba(194, 194, 194, 0)",
@@ -89,6 +94,8 @@ export default function Nav() {
               width={40}
               height={40}
               preload
+              className="transition-[width,height] duration-400 ease-[cubic-bezier(0.34,1.2,0.64,1)]"
+              style={{ width: compact ? 32 : 40, height: compact ? 32 : 40 }}
             />
           </Link>
 
