@@ -11,13 +11,18 @@ const items = [
 
 const geist = "var(--font-geist-sans), sans-serif";
 
-export default function Marcas() {
+// reveal: en el Home el título usa BlindsReveal; en Clientes, no
+export default function Marcas({ reveal = true }: { reveal?: boolean }) {
   return (
     <section className="flex w-full max-w-[1200px] flex-col items-center gap-10 bg-neutral-100 px-6 py-10 md:px-10">
       <div className="flex w-full max-w-[700px] flex-col items-center gap-4">
-        <BlindsReveal as="h2" className="t-h2 w-full text-center text-neutral-900">
-          Marcas con las que conectamos
-        </BlindsReveal>
+        {reveal ? (
+          <BlindsReveal as="h2" className="t-h2 w-full text-center text-neutral-900">
+            Marcas con las que conectamos
+          </BlindsReveal>
+        ) : (
+          <h2 className="t-h2 w-full text-center text-neutral-900">Marcas con las que conectamos</h2>
+        )}
         <p className="t-body-m w-full text-center text-neutral-800">
           Trabajamos junto a los principales operadores e integradores del país, conectando cada proyecto con la
           infraestructura que lo sostiene.

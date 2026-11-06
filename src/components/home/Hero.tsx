@@ -1,5 +1,6 @@
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
+import DownloadButton from "@/components/ui/DownloadButton";
 import BlindsReveal from "@/components/framer/BlindsReveal";
 import LazyGlobe from "@/components/LazyGlobe";
 import LogoTicker from "@/components/home/LogoTicker";
@@ -19,13 +20,7 @@ export default function Hero() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <span className="animate-appear [animation-delay:300ms]">
-              <a
-                href="/files/presentacion-epsilon.pdf"
-                download="Presentación Epsilon.pdf"
-                className="t-body-m inline-flex items-center rounded-full bg-brand-500 px-4 py-2 text-neutral-100 transition-colors hover:bg-brand-700 hover:text-white"
-              >
-                Descarga nuestra presentación
-              </a>
+              <DownloadButton />
             </span>
             <span className="animate-appear [animation-delay:500ms]">
               <Button href="/servicios" variant="secundario">

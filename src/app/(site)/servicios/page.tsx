@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import PageHero from "@/components/PageHero";
 import BlindsReveal from "@/components/framer/BlindsReveal";
-import ImageAscii from "@/components/ImageAscii";
 import Reveal from "@/components/Reveal";
 import ServicioCard from "@/components/ServicioCard";
 import Button from "@/components/ui/Button";
@@ -103,41 +103,20 @@ const areas = [
 export default function ServiciosPage() {
   return (
     <main className="flex w-full flex-col items-center gap-20 bg-neutral-100">
-      {/* Hero */}
-      <section className="relative flex w-full flex-col items-center overflow-hidden bg-linear-to-b from-brand-100 to-neutral-100 pt-[94px]">
-        <div className="relative z-[2] flex w-full max-w-[700px] flex-col items-center gap-6 px-6">
-          <BlindsReveal as="h1" className="t-h1 w-full text-center text-neutral-900">
-            Conoce nuestros servicios
-          </BlindsReveal>
-          <p className="t-body-l w-full text-center text-neutral-800">
-            Construcción y mantenimiento de redes de fibra óptica, sitios móviles y planta externa para operadores
-            de telecomunicaciones.
-          </p>
+      <PageHero
+        title="Conoce nuestros servicios"
+        subtitle="Construcción y mantenimiento de redes de fibra óptica, sitios móviles y planta externa para operadores de telecomunicaciones."
+        actions={
           <span className="animate-appear [animation-delay:300ms]">
             <Button href="/contacto">Contáctanos</Button>
           </span>
-        </div>
-        {/* "Negative Gap" -10% de Framer: la imagen ASCII sube bajo el título; máscara inferior 0→20% */}
-        <div className="relative z-0 -mt-[10%] aspect-[2048/1143] w-full [mask-image:linear-gradient(0deg,transparent_0%,#000_20%)]">
-          <ImageAscii
-            src="/images/servicios/hero.webp"
-            alt="Postes y tendido de redes en un camino, en arte ASCII"
-            sizing="fill"
-            fontSize={12}
-            lineHeight={0.75}
-            letterSpacing={-0.06}
-            colorFrom="rgb(20, 77, 251)"
-            colorTo="rgb(161, 184, 253)"
-            lightMax={1}
-            brightness={15}
-            contrast={-5}
-            whiteCutoff={0.9}
-            glowBlur={1}
-            cursorWidth={16}
-            className="absolute inset-0"
-          />
-        </div>
-      </section>
+        }
+        image="/images/servicios/hero.webp"
+        alt="Postes y tendido de redes en un camino, en arte ASCII"
+        overlap={10}
+        brightness={15}
+        contrast={-5}
+      />
 
       {/* Áreas de servicio */}
       <section className="flex w-full max-w-[1200px] flex-col gap-20 px-4 py-6 min-[810px]:p-8 min-[1200px]:p-10">

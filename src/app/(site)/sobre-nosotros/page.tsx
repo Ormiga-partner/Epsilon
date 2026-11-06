@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import PageHero from "@/components/PageHero";
+import DownloadButton from "@/components/ui/DownloadButton";
 import BlindsReveal from "@/components/framer/BlindsReveal";
 import Carrusel3D from "@/components/framer/Carrusel3D";
 import EpsilonStackCards from "@/components/framer/EpsilonStackCards";
-import ImageAscii from "@/components/ImageAscii";
 import MVVAccordion from "@/components/nosotros/MVVAccordion";
 import Button from "@/components/ui/Button";
 
@@ -24,55 +25,27 @@ const B700 = "rgb(12, 46, 151)";
 export default function SobreNosotrosPage() {
   return (
     <main className="flex w-full flex-col items-center gap-20 bg-neutral-100">
-      {/* Hero */}
-      <section className="relative flex w-full flex-col items-center overflow-hidden bg-linear-to-b from-brand-100 to-neutral-100 pt-[94px]">
-        <div className="relative z-[2] flex w-full max-w-[1200px] justify-center px-6 min-[810px]:px-10">
-          <div className="flex w-full max-w-[700px] flex-col items-center gap-6">
-            <BlindsReveal as="h1" className="t-h1 w-full text-center text-neutral-900 max-[420px]:text-[2.45rem]">
-              Infraestructura de red en la que tu operación puede confiar.
-            </BlindsReveal>
-            <p className="t-body-l w-full text-center text-neutral-800">
-              Internet dedicado, fibra óptica y redes empresariales con respaldo técnico real y soporte permanente.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-4">
-              <span className="animate-appear [animation-delay:300ms]">
-                <a
-                  href="/files/presentacion-epsilon.pdf"
-                  download="Presentación Epsilon.pdf"
-                  className="t-body-m inline-flex items-center rounded-full bg-brand-500 px-4 py-2 text-neutral-100 transition-colors hover:bg-brand-700 hover:text-white"
-                >
-                  Descarga nuestra presentación
-                </a>
-              </span>
-              <span className="animate-appear [animation-delay:500ms]">
-                <Button href="/servicios" variant="secundario">
-                  Ver servicios
-                </Button>
-              </span>
-            </div>
-          </div>
-        </div>
-        {/* "Negative Gap" -20% de Framer y máscara inferior 0→20% */}
-        <div className="relative z-0 -mt-[20%] aspect-[2048/1143] w-full [mask-image:linear-gradient(0deg,transparent_0%,#000_20%)]">
-          <ImageAscii
-            src="/images/nosotros/hero.webp"
-            alt="Torre de telecomunicaciones sobre cordillera, en arte ASCII"
-            sizing="fill"
-            fontSize={12}
-            lineHeight={0.75}
-            letterSpacing={-0.06}
-            colorFrom="rgb(20, 77, 251)"
-            colorTo="rgb(161, 184, 253)"
-            lightMax={1}
-            brightness={10}
-            contrast={5}
-            whiteCutoff={0.9}
-            glowBlur={1}
-            cursorWidth={16}
-            className="absolute inset-0"
-          />
-        </div>
-      </section>
+      <PageHero
+        title="Infraestructura de red en la que tu operación puede confiar."
+        subtitle="Internet dedicado, fibra óptica y redes empresariales con respaldo técnico real y soporte permanente."
+        actions={
+          <>
+            <span className="animate-appear [animation-delay:300ms]">
+              <DownloadButton />
+            </span>
+            <span className="animate-appear [animation-delay:500ms]">
+              <Button href="/servicios" variant="secundario">
+                Ver servicios
+              </Button>
+            </span>
+          </>
+        }
+        image="/images/nosotros/hero.webp"
+        alt="Torre de telecomunicaciones sobre cordillera, en arte ASCII"
+        overlap={20}
+        brightness={10}
+        contrast={5}
+      />
 
       {/* Sobre Epsilon */}
       <section className="flex w-full max-w-[1200px] flex-col items-center gap-10 px-4 py-6 min-[810px]:p-8 min-[1200px]:p-10">
