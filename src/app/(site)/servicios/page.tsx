@@ -123,8 +123,9 @@ export default function ServiciosPage() {
             src="/images/servicios/hero.webp"
             alt="Postes y tendido de redes en un camino, en arte ASCII"
             sizing="fill"
-            outputWidth={200}
-            lineHeight={0.8}
+            fontSize={12}
+            lineHeight={0.75}
+            letterSpacing={-0.06}
             colorFrom="rgb(20, 77, 251)"
             colorTo="rgb(161, 184, 253)"
             lightMax={1}

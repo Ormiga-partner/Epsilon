@@ -44,6 +44,10 @@ export interface ImageAsciiProps {
   sizing?: "fit" | "fill";
   /** alto de línea en em (Framer: 1 en tarjetas, 0.8 en el hero de Servicios) */
   lineHeight?: number;
+  /** tamaño fijo del carácter en px (las columnas se calculan según el ancho) */
+  fontSize?: number;
+  /** tracking en em (negativo = caracteres más juntos); solo con fontSize */
+  letterSpacing?: number;
   /** luminancia desde la que un píxel se considera blanco y no se dibuja (1 = nunca) */
   whiteCutoff?: number;
   className?: string;
@@ -67,6 +71,8 @@ export default function ImageAscii({
   staticAmount = 0.06,
   sizing = "fit",
   lineHeight = 1,
+  fontSize,
+  letterSpacing = 0,
   whiteCutoff = 1.01,
   className,
 }: ImageAsciiProps) {
@@ -112,9 +118,23 @@ export default function ImageAscii({
           : Math.min(W / img.naturalWidth, H / img.naturalHeight);
       const viewW = sizing === "fill" ? W : img.naturalWidth * scale;
       const viewH = sizing === "fill" ? H : img.naturalHeight * scale;
-      const cols = outputWidth;
-      const colW = viewW / cols;
-      const fontPx = colW / 0.64;
+      // Con fontSize fijo: el tamaño del carácter manda y las columnas salen del ancho
+      // (avance real de Geist Mono + tracking). Sin fontSize: outputWidth columnas escaladas.
+      let cols: number;
+      let colW: number;
+      let fontPx: number;
+      if (fontSize) {
+        fontPx = fontSize;
+        const mctx = canvas.getContext("2d");
+        if (mctx) mctx.font = `${fontPx}px ${monoFamily}`;
+        const advance = mctx ? mctx.measureText("M").width : fontPx * 0.6;
+        colW = Math.max(1, advance + letterSpacing * fontPx);
+        cols = Math.max(1, Math.round(viewW / colW));
+      } else {
+        cols = outputWidth;
+        colW = viewW / cols;
+        fontPx = colW / 0.64;
+      }
       const rowH = fontPx * lineHeight;
       const rows = Math.max(1, Math.round(viewH / rowH));
       // Región de la imagen original que se ve (en "fit" es la imagen entera)
@@ -255,7 +275,7 @@ export default function ImageAscii({
     if (img.complete) compute();
     // Geist Mono puede no estar descargada aún (el canvas no la dispara): se pide y se redibuja
     loadGeistMono(12).then(() => {
-      if (!cancelled) draw();
+      if (!cancelled) compute();
     });
     const ro = new ResizeObserver(compute);
     ro.observe(parent);
@@ -272,7 +292,7 @@ export default function ImageAscii({
       hoverTarget.removeEventListener("pointermove", onMove);
       hoverTarget.removeEventListener("pointerleave", onLeave);
     };
-  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax, staticInterval, staticAmount, sizing, lineHeight, whiteCutoff]);
+  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax, staticInterval, staticAmount, sizing, lineHeight, whiteCutoff, fontSize, letterSpacing]);
 
   const [gr, gg, gb] = parseRgb(colorFrom);
   const glowColor = `rgba(${gr}, ${gg}, ${gb}, 0.5)`;

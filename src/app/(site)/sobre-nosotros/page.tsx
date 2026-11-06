@@ -58,9 +58,9 @@ export default function SobreNosotrosPage() {
             src="/images/nosotros/hero.webp"
             alt="Torre de telecomunicaciones sobre cordillera, en arte ASCII"
             sizing="fill"
-            // Framer usa 200 columnas; con 300 los caracteres quedan más chicos (pedido del cliente)
-            outputWidth={300}
-            lineHeight={0.8}
+            fontSize={12}
+            lineHeight={0.75}
+            letterSpacing={-0.06}
             colorFrom="rgb(20, 77, 251)"
             colorTo="rgb(161, 184, 253)"
             lightMax={1}
