@@ -40,6 +40,8 @@ export interface ImageAsciiProps {
   staticInterval?: number;
   /** amplitud del ruido sobre la densidad (0 = sin hormigueo) */
   staticAmount?: number;
+  /** fracción de celdas que cambian en cada paso (0–1) */
+  staticFraction?: number;
   /** "fit": la imagen entera cabe (tarjetas) · "fill": cubre el contenedor (hero) */
   sizing?: "fit" | "fill";
   /** alto de línea en em (Framer: 1 en tarjetas, 0.8 en el hero de Servicios) */
@@ -67,8 +69,10 @@ export default function ImageAscii({
   cursorWidth = 32,
   glowBlur = 2,
   lightMax = 0.55,
-  staticInterval = 0.1,
-  staticAmount = 0.06,
+  // Suavizado a pedido (Framer: 0.1s y todas las celdas): más lento, menos celdas, saltos cortos
+  staticInterval = 0.25,
+  staticAmount = 0.04,
+  staticFraction = 0.15,
   sizing = "fit",
   lineHeight = 1,
   fontSize,
@@ -238,6 +242,8 @@ export default function ImageAscii({
       const last = DETAILED.length - 1;
       for (let i = 0; i < chars.length; i++) {
         if (chars[i] === " ") continue;
+        // solo una fracción de celdas cambia en cada paso: hormigueo suave, no parpadeo
+        if (Math.random() > staticFraction) continue;
         const l = Math.min(1, Math.max(0.02, base[i] + (Math.random() * 2 - 1) * staticAmount));
         chars[i] = DETAILED[Math.max(1, Math.round(l * last))];
       }
@@ -292,7 +298,7 @@ export default function ImageAscii({
       hoverTarget.removeEventListener("pointermove", onMove);
       hoverTarget.removeEventListener("pointerleave", onLeave);
     };
-  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax, staticInterval, staticAmount, sizing, lineHeight, whiteCutoff, fontSize, letterSpacing]);
+  }, [src, outputWidth, colorFrom, colorTo, brightness, contrast, invert, cursorWidth, glowBlur, lightMax, staticInterval, staticAmount, staticFraction, sizing, lineHeight, whiteCutoff, fontSize, letterSpacing]);
 
   const [gr, gg, gb] = parseRgb(colorFrom);
   const glowColor = `rgba(${gr}, ${gg}, ${gb}, 0.5)`;
